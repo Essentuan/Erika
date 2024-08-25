@@ -44,7 +44,7 @@ eslint {
 
 webpack {
     outputDir.set(
-        buildDir.resolve("webpack")
+        (buildDir.toPath()/"webpack"/"web"/"js").toFile()
     )
 
     config("webpack.config.js")
@@ -65,15 +65,15 @@ dependencies {
     add("eslint", "npm:prettier:2.2.1")
     add("eslint", "npm:inherits:2.0.4")
     add("eslint", "npm:wrappy:1.0.2")
-    
+
     //Webpack
     add("webpack", "npm:source-map-loader:4.0.0")
     add("webpack", "npm:webpack:5.74.0")
     add("webpack", "npm:webpack-cli:4.7.0")
-    
+
     add("webpack", "npm:types/eslint:8.4.5")
     add("webpack", "npm:types/node:18.6.2")
-    
+
     deps("npm:leaflet:1.9.4")
     types("npm:types/leaflet:1.9.12") {
         exclude("npm:types/geojson:*")

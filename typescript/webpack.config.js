@@ -26,10 +26,10 @@ module.exports = {
     },
     resolve: {
         modules: process.env.NODE_PATH.split(":"),
-        extensions: [ ".js", ".ts", ".json" ],
+        extensions: [".js", ".ts", ".json"],
     },
     output: {
-        path: path.resolve(__dirname, "build/webpack")
+        path: path.resolve(__dirname, "build/webpack/web/js")
     },
     optimization: {
         minimize: true,

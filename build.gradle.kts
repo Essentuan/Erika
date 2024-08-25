@@ -45,6 +45,11 @@ repositories {
     maven("https://libraries.minecraft.net")
 }
 
+val generatedOutput: Configuration by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+}
+
 dependencies {
     testImplementation(kotlin("test"))
 
@@ -79,20 +84,26 @@ dependencies {
     implementation("com.vdurmont:emoji-java:$emoji_version")
 }
 
-//sourceSets {
-//    main {
-//        resources.srcDir
-//    }
-//}
+val typescript by tasks.registering(Copy::class) {
+    dependsOn(":typescript:build")
+
+    from(project(":typescript").buildDir.resolve("webpack")) {
+        exclude("**/*.LICENSE.txt")
+    }
+
+    into(buildDir.resolve("typescript"))
+}
+
+sourceSets {
+    main {
+        resources.srcDir(typescript)
+    }
+}
 
 tasks {
     shadowJar {
         archiveBaseName.set("erika")
         archiveVersion.set("v${project.version}")
         archiveClassifier.set("")
-    }
-
-    compileKotlin {
-        dependsOn(":typescript:build")
     }
 }
