@@ -1,12 +1,9 @@
-
-import org.gradle.kotlin.dsl.invoke
-import org.gradle.kotlin.dsl.run
 import kotlin.String
 
 plugins {
-    application
     kotlin("jvm") version "2.0.0"
     id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.gradlets.typescript").version("1.4.1") apply false
 }
 
 val erika_version: String by project
@@ -31,10 +28,6 @@ val acf_version: String by project
 val buster_version: String by project
 val kord_version: String by project
 val emoji_version: String by project
-
-application {
-    mainClass = "net.essentuan.erika.AppMainKt"
-}
 
 java {
     withSourcesJar()
@@ -78,7 +71,7 @@ dependencies {
     implementation("com.essentuan:acf:$acf_version")
 
     implementation("com.github.essentuan:buster:v$buster_version")
-    
+
     implementation("dev.kord:kord-core:$kord_version")
     implementation("dev.kord:kord-common:$kord_version")
     implementation("dev.kord:kord-gateway:$kord_version")
@@ -86,20 +79,20 @@ dependencies {
     implementation("com.vdurmont:emoji-java:$emoji_version")
 }
 
-tasks.test {
-    useJUnitPlatform()
-}
+//sourceSets {
+//    main {
+//        resources.srcDir
+//    }
+//}
 
-tasks.run {
-    args = listOf(
-        "-services .",
-        "-mongo mongodb://127.0.0.1:27017/?authSource=theSimpleOnes",
-        "-db Erika"
-    )
-}
+tasks {
+    shadowJar {
+        archiveBaseName.set("erika")
+        archiveVersion.set("v${project.version}")
+        archiveClassifier.set("")
+    }
 
-tasks.shadowJar {
-    archiveBaseName = "erika"
-    archiveVersion = "v$version"
-    archiveClassifier = ""
+    compileKotlin {
+        dependsOn(":typescript:build")
+    }
 }
