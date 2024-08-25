@@ -121,3 +121,5 @@ run/
 .vscode/
 .profileconfig.json
 .fleet/run.json
+typescript/src/main/tsconfig.json
+/.fleet
