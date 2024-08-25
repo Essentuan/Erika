@@ -1,9 +1,10 @@
 package net.essentuan.erika
 
 import com.busted_moments.buster.Buster
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import net.essentuan.erika.commands.MEMORY_DEBUG_ENABLED
 import net.essentuan.erika.framework.console.Commands
 import net.essentuan.erika.framework.console.Logging
@@ -28,6 +29,7 @@ import net.essentuan.esl.time.duration.minutes
 import net.essentuan.esl.time.duration.seconds
 import net.essentuan.esl.time.extensions.timeSince
 import java.util.Date
+import java.util.concurrent.Executors
 import kotlin.collections.set
 import kotlin.concurrent.thread
 import kotlin.coroutines.Continuation
@@ -88,6 +90,9 @@ fun main(args: Array<String>) {
     ready = true
     listeners.forEach { it.resume(Unit) }
 }
+
+fun scope(threads: Int): CoroutineScope =
+    CoroutineScope(Executors.newScheduledThreadPool(threads).asCoroutineDispatcher())
 
 private var last: Date = Date()
 
