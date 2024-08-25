@@ -6,13 +6,18 @@ import io.ktor.server.netty.Netty
 import io.ktor.server.routing.IgnoreTrailingSlash
 import net.essentuan.erika.arg
 import net.essentuan.erika.framework.Service
+import net.essentuan.erika.ktor.KtorService.engine
 import net.essentuan.esl.reflections.Reflections
 import net.essentuan.esl.reflections.Types.Companion.objects
 import net.essentuan.esl.reflections.extensions.instance
 
 object KtorService : Service(), ApplicationEngine {
     private val engine: ApplicationEngine by this {
-        embeddedServer(Netty, port = arg("port", 25569, String::toInt).value) {
+        embeddedServer(Netty, port = arg("port", 25569, String::toInt).value, configure = {
+            connectionGroupSize = 20
+            workerGroupSize = 20
+            callGroupSize = 15
+        }) {
             install(IgnoreTrailingSlash)
 
             Reflections.types

@@ -13,7 +13,6 @@ import net.essentuan.erika.db.struct.guild.GuildModel.Table.external
 import net.essentuan.erika.db.struct.guild.member.MemberModel.Table.external
 import net.essentuan.erika.db.struct.guild.member.search.invoke
 import net.essentuan.erika.db.struct.guild.search.invoke
-import net.essentuan.erika.inline
 import net.essentuan.esl.Result
 import net.essentuan.esl.collections.maps.expireAfter
 import net.essentuan.esl.collections.synchronized
@@ -39,7 +38,8 @@ object Requests {
                 if (!Guild.Tags.isValid(it.guild) && !Guild.Names.isValid(it.guild) && !it.guild.isUUID())
                     null
                 else
-                    Guild(it.guild).map { (_, result) -> result }.first().map { guild -> guild.lock { external() } }.orNull()
+                    Guild(it.guild).map { (_, result) -> result }.first().map { guild -> guild.lock { external() } }
+                        .orNull()
             }
         }
 
@@ -50,7 +50,8 @@ object Requests {
                 if (!Profile.isValid(it.member))
                     null
                 else
-                    Guild.Member(it.member, create = true).map { (_, result) -> result }.first().map { member -> member.lock { external() } }.orNull()
+                    Guild.Member(it.member, create = true).map { (_, result) -> result }.first()
+                        .map { member -> member.lock { external() } }.orNull()
             }
         }
     }
@@ -110,9 +111,7 @@ object Requests {
             }
 
             socket.apply {
-                inline {
-                    data.result.ifPresentOrElse({ request.fulfill(it) }) { request.fulfill(error = "Bad request!") }
-                }
+                data.result.ifPresentOrElse({ request.fulfill(it) }) { request.fulfill(error = "Bad request!") }
             }
         }
     }

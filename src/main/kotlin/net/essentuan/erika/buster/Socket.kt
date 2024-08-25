@@ -11,7 +11,10 @@ import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.launch
 import net.essentuan.erika.buster.events.BusterEvent
 import net.essentuan.erika.db.struct.fuy.BusterAccount
 import net.essentuan.erika.framework.db.`object`.BsonModel
@@ -21,6 +24,7 @@ import net.essentuan.erika.framework.events.listen
 import net.essentuan.erika.inline
 import net.essentuan.erika.observers.player.worlds.WorldList
 import net.essentuan.esl.Result
+import net.essentuan.esl.coroutines.delay
 import net.essentuan.esl.fetch.NOTHING
 import net.essentuan.esl.get
 import net.essentuan.esl.json.Json
@@ -28,8 +32,10 @@ import net.essentuan.esl.model.Model.Companion.export
 import net.essentuan.esl.other.lock
 import net.essentuan.esl.scheduling.tasks
 import net.essentuan.esl.time.duration.minutes
+import net.essentuan.esl.time.duration.ms
 import net.essentuan.esl.time.extensions.timeSince
 import java.io.ByteArrayInputStream
+import java.io.IOException
 import java.io.InputStreamReader
 import java.util.Date
 import java.util.UUID
@@ -46,7 +52,7 @@ class Socket(
         "$username|$uuid|${System.currentTimeMillis()}|${Random.nextLong()}|${hashCode()}|${BusterService.sockets.size}"
     )
 
-    private val charset = call.request.headers.suitableCharset()
+    val charset = call.request.headers.suitableCharset()
 
     lateinit var account: BusterAccount
 
@@ -61,14 +67,18 @@ class Socket(
 
             isOpen = true
 
-            for (frame in incoming)
-                if (frame is Frame.Text)
-                    process(frame)
+            incoming.consumeEach {
+                if (it is Frame.Text)
+                    launch {
+                        process(it)
+                    }
+            }
         } catch (_: ClosedReceiveChannelException) {
             //onClose
+        } catch(_ : IOException) {
+            //Timeout
         } catch (ex: Throwable) {
             LOGGER.error("Uncaught exception in Socket(username=$username, uuid=$uuid, auth=$isOpen)!", ex)
-            close()
         } finally {
             clean()
         }
@@ -89,10 +99,10 @@ class Socket(
 
         val packet = result.get()
 
-        inline { BusterService.listeners[packet.javaClass]?.also {
+        BusterService.listeners[packet.javaClass]?.also {
             if (!it.privileged || ::account.isInitialized)
                 it(this@Socket, packet)
-        } }
+        }
     }
 
     private fun read(frame: Frame.Text) = Packet(
@@ -105,16 +115,32 @@ class Socket(
         )
     )
 
-    suspend fun send(packet: Packet) {
-        outgoing.send(
-            Frame.Text(
+    fun send(packet: Packet) =
+        send(packet.export().asString())
+
+    fun send(payload: String) =
+        send(payload.toByteArray(charset))
+
+    @OptIn(DelicateCoroutinesApi::class)
+    fun send(payload: ByteArray) {
+        inline {
+            val frame = Frame.Text(
                 true,
-                packet.export().asString().toByteArray(charset)
+                payload
             )
-        )
+
+            for (i in 0..3) {
+                if (outgoing.trySend(frame).isSuccess || outgoing.isClosedForSend)
+                    return@inline
+                else
+                    delay(200.ms)
+            }
+
+            LOGGER.error("Failed to send packet to $username ($uuid)!")
+        }
     }
 
-    suspend fun Request<*>.fulfill(
+    fun Request<*>.fulfill(
         payload: Any = Unit,
         error: String = NOTHING
     ) {

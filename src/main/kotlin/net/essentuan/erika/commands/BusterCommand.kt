@@ -21,4 +21,3 @@ fun CommandContext<*>.trusted(
 fun CommandContext<*>.sessions() {
     Logging.info("There are currently ${BusterService.sockets.size} sockets connected to Buster!")
 }
-

@@ -14,6 +14,7 @@ import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.close
 import io.ktor.websocket.extensionOrNull
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.isActive
 import net.essentuan.erika.db.struct.guild.search.invoke
@@ -31,11 +32,12 @@ import net.essentuan.erika.observers.player.worlds.WorldList
 import net.essentuan.erika.observers.territories.TerritoryList
 import net.essentuan.erika.observers.territories.TerritoryList.external
 import net.essentuan.erika.observers.territories.events.MapUpdateEvent
+import net.essentuan.erika.scope
 import net.essentuan.esl.Rating
 import net.essentuan.esl.collections.maps.expireAfter
 import net.essentuan.esl.collections.synchronized
-import net.essentuan.esl.coroutines.launch
 import net.essentuan.esl.fetch.fetch
+import net.essentuan.esl.model.Model.Companion.export
 import net.essentuan.esl.orNull
 import net.essentuan.esl.other.lock
 import net.essentuan.esl.reflections.Reflections
@@ -47,12 +49,13 @@ import net.essentuan.esl.scheduling.annotations.Lifetime
 import net.essentuan.esl.time.duration.minutes
 import net.essentuan.esl.time.extensions.timeUntil
 import java.math.BigInteger
+import java.nio.charset.Charset
 import java.security.MessageDigest
 import java.util.UUID
 
 val LOGGER by Logging
 
-object BusterService : Service(), Route, Iterable<Socket> {
+object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by scope(10) {
     @Subscribe
     private fun WorldList.UpdateEvent.on() {
         broadcast(ClientboundWorldListPacket(WorldList.lock { external() }))
@@ -64,7 +67,8 @@ object BusterService : Service(), Route, Iterable<Socket> {
     }
 
     private val guilds =
-        mutableMapOf<UUID, BasicGuild>().synchronized().expireAfter { (_, it) -> it.metadata.expires!!.timeUntil().min(3.minutes) }
+        mutableMapOf<UUID, BasicGuild>().synchronized()
+            .expireAfter { (_, it) -> it.metadata.expires!!.timeUntil().min(3.minutes) }
 
     @Every(seconds = 10.0)
     @Lifetime(seconds = 90.0)
@@ -102,9 +106,6 @@ object BusterService : Service(), Route, Iterable<Socket> {
 
     override fun Application.start() {
         install(WebSockets) {
-            masking = true
-            maxFrameSize = 1_000_000
-
             extensions {
                 install(Buster)
             }
@@ -143,11 +144,14 @@ object BusterService : Service(), Route, Iterable<Socket> {
 
     @OptIn(DelicateCoroutinesApi::class)
     inline fun broadcast(packet: Packet, crossinline predicate: Socket.() -> Boolean = { true }) {
+        val payload = packet.export().asString()
+        val buffers = mutableMapOf<Charset, ByteArray>()
+
         for (socket in this@BusterService)
-            launch {
-                if (socket.predicate())
-                    socket.send(packet)
-            }
+            if (socket.predicate())
+                socket.send(buffers.computeIfAbsent(socket.charset) {
+                    payload.toByteArray(it)
+                })
     }
 
     override fun iterator(): Iterator<Socket> =

@@ -12,7 +12,6 @@ import net.essentuan.erika.buster.events.BusterEvent
 import net.essentuan.erika.framework.db.`object`.types.Singleton
 import net.essentuan.erika.framework.events.annotations.Subscribe
 import net.essentuan.erika.framework.events.events
-import net.essentuan.erika.inline
 import net.essentuan.erika.observers.guilds.events.GuildEvent
 import net.essentuan.erika.observers.guilds.list.Guilds
 import net.essentuan.erika.observers.territories.TerritoryList
@@ -58,9 +57,7 @@ object GuildListener : Singleton() {
         guild.clean()
 
         for (timer in guild.lock { timers.values().toList() })
-            inline {
-                send(ClientboundTerritoryAttackedPacket(timer))
-            }
+            send(ClientboundTerritoryAttackedPacket(timer))
     }
 
     @Subscribe
@@ -137,9 +134,7 @@ class BusterGuild(
 
             values.toList()
         } iterate {
-            inline {
-                it.send(ClientboundTerritoryAttackedPacket(timer))
-            }
+            it.send(ClientboundTerritoryAttackedPacket(timer))
         }
     }
 
