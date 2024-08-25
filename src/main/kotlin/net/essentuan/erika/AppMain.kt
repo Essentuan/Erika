@@ -41,6 +41,8 @@ val cache: MutableMap<String, String> = mutableMapOf()
 private var ready = false
 private val listeners = mutableListOf<Continuation<Unit>>()
 
+val ClassLoader = Argument::class.java.classLoader
+
 @OptIn(DelicateCoroutinesApi::class)
 fun main(args: Array<String>) {
     val reader = args.joinToString(separator = " ").consume()

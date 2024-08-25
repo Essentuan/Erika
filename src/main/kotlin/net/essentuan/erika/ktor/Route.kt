@@ -3,6 +3,7 @@ package net.essentuan.erika.ktor
 import io.ktor.http.ContentType
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.fromFilePath
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -15,6 +16,7 @@ import io.ktor.server.routing.routing
 import io.ktor.util.pipeline.PipelineContext
 import net.essentuan.erika.framework.console.Logging
 import net.essentuan.erika.framework.events.events
+import net.essentuan.erika.ktor.annotations.Wildcard
 import net.essentuan.esl.collections.maps.expireAfter
 import net.essentuan.esl.fetch.annotations.Cache
 import net.essentuan.esl.fetch.annotations.duration
@@ -25,13 +27,17 @@ import net.essentuan.esl.model.Model
 import net.essentuan.esl.model.Model.Companion.export
 import net.essentuan.esl.model.field.Field
 import net.essentuan.esl.other.lock
+import net.essentuan.esl.reflections.extensions.annotatedWith
 import net.essentuan.esl.reflections.extensions.get
 import net.essentuan.esl.reflections.extensions.simpleString
 import net.essentuan.esl.scheduling.annotations.Every
 import net.essentuan.esl.time.duration.Duration
 import java.awt.image.BufferedImage
 import java.lang.reflect.AnnotatedElement
+import java.nio.file.Path
 import javax.imageio.ImageIO
+import kotlin.io.path.exists
+import kotlin.io.path.inputStream
 import kotlin.reflect.KFunction
 import kotlin.reflect.KParameter
 import kotlin.reflect.full.callSuspendBy
@@ -57,9 +63,12 @@ interface Route {
                     .forEach { func ->
                         val (route, method) = func.method ?: return@forEach
 
-                        var path = route
+                        var path = StringBuilder()
+
                         if (!route.startsWith("/"))
-                            path = "/$path"
+                            path.append("/")
+
+                        path.append(route)
 
                         var instance: KParameter? = null
                         var context: KParameter? = null
@@ -92,12 +101,21 @@ interface Route {
                                         getAnnotations()
                                 })
                             }.onEach { (p, _) ->
-                                path = "$path/{${p.name}${if (p.isOptional) "?" else ""}}"
+                                path.append("/{")
+                                path.append(p.name)
+
+                                if (p annotatedWith Wildcard::class)
+                                    path.append("...")
+
+                                if (p.isOptional)
+                                    path.append("?")
+
+                                path.append('}')
                             }.toList()
 
                         Router(
                             this,
-                            path,
+                            path.toString(),
                             method,
                             func,
                             instance,
@@ -143,7 +161,7 @@ interface Route {
                     val args = mutableMapOf<KParameter, Any?>()
 
                     for ((param, type) in params) {
-                        args[param] = call.parameters[param.name!!]?.let {
+                        args[param] = call.parameters.getAll(param.name!!)?.joinToString("/")?.let {
                             type.encoder.valueOf(
                                 it,
                                 emptySet(),
@@ -216,7 +234,25 @@ suspend fun ApplicationCall.respond(data: Any?, status: HttpStatusCode? = null) 
     when (data) {
         null -> respond(status ?: HttpStatusCode.NotFound, "Not found!")
         is Response -> respond(data.data, data.status)
+
+        is String -> respondText(
+            data,
+            status = status ?: HttpStatusCode.OK,
+            contentType = ContentType.Application.Json
+        )
+
+        is Path -> {
+            if (!data.exists())
+                respond(null)
+            else
+                respondOutputStream(
+                    contentType = ContentType.fromFilePath(data.toString()).firstOrNull() ?: ContentType.Any,
+                    status = status
+                ) { data.inputStream().copyTo(this) }
+        }
+
         is Unit -> respond(null, status ?: HttpStatusCode.OK)
+
         is Json -> respondText(
             data.asString(true),
             status = status ?: HttpStatusCode.OK,
@@ -224,7 +260,9 @@ suspend fun ApplicationCall.respond(data: Any?, status: HttpStatusCode? = null) 
         )
 
         is AnyJson -> respond(Json(data), status ?: HttpStatusCode.OK)
+
         is Model<*> -> respond(data.export(), status ?: HttpStatusCode.OK)
+
         is BufferedImage -> respondOutputStream(
             contentType = ContentType.Image.PNG,
             status = status ?: HttpStatusCode.OK

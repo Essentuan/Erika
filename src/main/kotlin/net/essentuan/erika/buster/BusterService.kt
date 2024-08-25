@@ -113,6 +113,9 @@ object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by sco
 
         routing {
             webSocket("/buster") {
+                if (!isEnabled)
+                    return@webSocket
+
                 val buster = extensionOrNull(Buster)
                 if (buster?.ready != true) {
                     close()
