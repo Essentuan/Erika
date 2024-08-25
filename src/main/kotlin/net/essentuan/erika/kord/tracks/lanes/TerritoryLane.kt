@@ -52,7 +52,7 @@ class TerritoryLane(
     @Lifetime(minutes = 1.0)
     private suspend fun reformat() {
         while (queue.isNotEmpty()) {
-            val (_, peek) = queue.peek()
+            val (_, peek) = (queue.peek() ?: queue.poll()) ?: continue
             if (peek.after.acquired.timeSince() < 59.5.seconds)
                 continue
 
