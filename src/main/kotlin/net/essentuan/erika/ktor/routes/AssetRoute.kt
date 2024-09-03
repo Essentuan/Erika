@@ -7,8 +7,8 @@ import net.essentuan.erika.ktor.annotations.Wildcard
 import java.nio.file.Path
 import kotlin.io.path.div
 
-object ResourceRoute : Route.Container() {
-    @GET("resources")
-    private fun get(@Wildcard resource: String): Path? =
-        resource.split("/").fold(Resources / "web", Path::resolve)
+object AssetRoute : Route.Container() {
+    @GET("assets")
+    private fun get(@Wildcard resource: String): Path =
+        resource.split("/").fold(Resources / "assets", Path::resolve)
 }

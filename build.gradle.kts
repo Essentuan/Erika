@@ -1,7 +1,10 @@
+import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
 import kotlin.String
 
 plugins {
+    application
     kotlin("jvm") version "2.0.0"
+
     id("com.github.johnrengelman.shadow") version "7.1.2"
     id("com.gradlets.typescript").version("1.4.1") apply false
 }
@@ -35,6 +38,10 @@ java {
 
 kotlin {
     jvmToolchain(21)
+}
+
+application {
+    mainClass.set("net.essentuan.erika.AppMainKt")
 }
 
 repositories {
@@ -105,5 +112,16 @@ tasks {
         archiveBaseName.set("erika")
         archiveVersion.set("v${project.version}")
         archiveClassifier.set("")
+    }
+
+    named("run", JavaExec::class) {
+        standardInput = System.`in`
+
+        args = listOf(
+            "-services .",
+            "-disabled Kord",
+            "-mongo mongodb://127.0.0.1:27017/?authSource=theSimpleOnes",
+            "-db Erika",
+        )
     }
 }

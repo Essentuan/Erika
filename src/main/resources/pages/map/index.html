@@ -1,0 +1,27 @@
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Wynncraft — World Map</title>
+        <link rel="icon" href="/assets/icons/map/icon.png">
+        <link rel="stylesheet" href="/assets/css/map/common.css">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+        <link href="https://fonts.googleapis.com/css2?family=Abel&display=swap" rel="stylesheet">
+        <script src="https://kit.fontawesome.com/e339ed2e95.js" crossorigin="anonymous"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="/assets/js/map.js" defer></script>
+    </head>
+    <body class="m-0">
+        <div id="leaflet" class="bg-black w-screen h-screen">
+            <div class="tooltip text-outline hidden" id="popup">
+                <div class="content" id="popup-content">
+
+                </div>
+                <div class="nameplate">
+                    <span class="inline-block align-middle" id="popup-nameplate">
+
+                    </span>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

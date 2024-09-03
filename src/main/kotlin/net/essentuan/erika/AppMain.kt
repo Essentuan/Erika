@@ -28,6 +28,8 @@ import net.essentuan.esl.time.duration.FormatFlag
 import net.essentuan.esl.time.duration.minutes
 import net.essentuan.esl.time.duration.seconds
 import net.essentuan.esl.time.extensions.timeSince
+import java.nio.file.FileSystems
+import java.nio.file.Paths
 import java.util.Date
 import java.util.concurrent.Executors
 import kotlin.collections.set
@@ -35,6 +37,7 @@ import kotlin.concurrent.thread
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.io.path.exists
 import kotlin.system.exitProcess
 
 val cache: MutableMap<String, String> = mutableMapOf()
@@ -68,8 +71,7 @@ fun main(args: Array<String>) {
     Commands.start()
 
     Scheduler.apply {
-        capacity = 50
-        DISPATCHER = GlobalScope
+        capacity = 30
         this += Logging
 
         start()
@@ -81,16 +83,25 @@ fun main(args: Array<String>) {
 
     Logging.info("Finished loading!")
 
-    Runtime.getRuntime().addShutdownHook(thread(
-        name = "Shutdown Hook",
-        start = false
-    ) {
-        Scheduler.shutdown()
-        ShutdownEvent.post()
-    })
+    Runtime.getRuntime().addShutdownHook(
+        thread(
+            name = "Shutdown Hook",
+            start = false
+        ) {
+            Scheduler.shutdown()
+            ShutdownEvent.post()
+        })
 
     ready = true
     listeners.forEach { it.resume(Unit) }
+
+    thread(name = "Heartbeat", start = true, isDaemon = true) {
+        if (tick.timeSince() > 60.seconds) {
+            Logging.error("Scheduler has stopped running tasks!")
+
+            exitProcess(0)
+        }
+    }
 }
 
 fun scope(threads: Int): CoroutineScope =
@@ -126,6 +137,13 @@ private fun gc() {
     Runtime.getRuntime().gc()
 
     last = Date()
+}
+
+private var tick = Date()
+
+@Every(ms = 500.0)
+private fun tick() {
+    tick = Date()
 }
 
 suspend fun awaitReady() {

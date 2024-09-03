@@ -12,6 +12,7 @@ import net.essentuan.erika.framework.events.Event
 import net.essentuan.erika.db.struct.territories.search.TileSearch
 import net.essentuan.erika.fetch.athena.MapPart
 import net.essentuan.erika.fetch.athena.map
+import net.essentuan.esl.color.Color
 import net.essentuan.esl.coroutines.blocking
 import net.essentuan.esl.fetch.fetch
 import net.essentuan.esl.model.annotations.Ignored
@@ -62,6 +63,9 @@ data class Tile(
 
     fun contains(x: Int, y: Int): Boolean =
         x >= start.first && x < (start.first + width) && y >= start.second && y < (start.second + height)
+
+    fun hasColor(x: Int, y: Int): Boolean =
+        Color(this[x, y], alpha = true).alpha != 0
 
     companion object Table : StandardTable<Tile>() {
         init {
@@ -137,7 +141,7 @@ data class Tile(
                     if (!grid.contains(realX, realY))
                         continue
 
-                    if (tile?.contains(realX, realY) == false)
+                    if (tile?.contains(realX, realY) == false || tile?.hasColor(realX, realY) == false)
                         tile = null
 
                     if (tile == null)
@@ -155,7 +159,9 @@ data class Tile(
             return when {
                 tiles.isNullOrEmpty() -> null
                 tiles.size == 1 -> if (tiles[0].contains(x, y)) tiles[0] else null
-                else -> tiles.firstOrNull { it.contains(x, y) }
+                else -> tiles.firstOrNull {
+                    it.contains(x, y) && it.hasColor(x, y)
+                }
             }
         }
 

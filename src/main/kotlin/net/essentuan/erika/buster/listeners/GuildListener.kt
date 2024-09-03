@@ -76,16 +76,13 @@ object GuildListener : Singleton() {
 
         val timer = packet.timer
         if (timer.territory !in TerritoryList) {
-            if (timer.trusted || guild.lock {
-                    timers.values()
-                        .any { it.territory.startsWith(timer.territory) && (it.remaining - timer.remaining).abs() < 1.minutes }
-                })
+            if (timer.trusted || guild.find(timer, false) != null)
                 return
 
             val territory = TerritoryList.firstOrNull { it.name.startsWith(timer.territory) } ?: return
 
             guild.lock {
-                if (timer !in timers[territory.name])
+                if (find(timer, territory = territory.name) == null)
                     enqueue(
                         timer.copy(
                             territory = territory.name,
@@ -95,13 +92,11 @@ object GuildListener : Singleton() {
             }
         } else {
             guild.lock {
-                val previous = timers[timer.territory].firstOrNull {
-                    it.territory == timer.territory && (it.remaining - timer.remaining).abs() < 1.minutes
-                }
+                val previous = find(timer)
 
                 if (previous == null)
                     enqueue(timer)
-                else if (!previous.trusted && timer.trusted)
+                else if (previous.remaining > 1.minutes && !previous.trusted && timer.trusted)
                     enqueue(previous.copy(defense = timer.defense, trusted = true))
 
             }
@@ -127,6 +122,18 @@ class BusterGuild(
         json(data) {
             "timers" to timers.values().map { it.export() }
         }
+
+    @Synchronized
+    fun find(timer: AttackTimer, strict: Boolean = true, territory: String = timer.territory): AttackTimer? {
+        return if (strict) {
+            timers[territory].firstOrNull {
+                it.territory == territory && (it.remaining - timer.remaining).abs() < 1.minutes
+            }
+        } else
+            timers.values().firstOrNull {
+                it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < 1.minutes
+            }
+    }
 
     fun enqueue(timer: AttackTimer) {
         lock {

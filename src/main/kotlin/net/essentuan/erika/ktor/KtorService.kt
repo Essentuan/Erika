@@ -1,9 +1,11 @@
 package net.essentuan.erika.ktor
 
+import com.busted_moments.buster.Buster
 import io.ktor.server.application.install
 import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
 import io.ktor.server.routing.IgnoreTrailingSlash
+import io.ktor.server.websocket.*
 import net.essentuan.erika.arg
 import net.essentuan.erika.framework.Service
 import net.essentuan.erika.ktor.KtorService.engine
@@ -19,6 +21,12 @@ object KtorService : Service(), ApplicationEngine {
             callGroupSize = 15
         }) {
             install(IgnoreTrailingSlash)
+
+            install(WebSockets) {
+                extensions {
+                    install(Buster)
+                }
+            }
 
             Reflections.types
                 .subtypesOf(Route::class)
@@ -40,6 +48,7 @@ object KtorService : Service(), ApplicationEngine {
 
     override fun start(wait: Boolean): ApplicationEngine =
         engine.start(wait)
+
     override fun stop(gracePeriodMillis: Long, timeoutMillis: Long) =
         engine.stop(gracePeriodMillis, timeoutMillis)
 }

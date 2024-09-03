@@ -58,7 +58,9 @@ abstract class Service {
     }
 
     abstract inner class Managed<T> : ReadWriteProperty<Any?, T> {
-        init { managed+= this }
+        init {
+            managed += this
+        }
 
         private var value: Any? = null
         private var ready: Boolean = false
@@ -69,7 +71,7 @@ abstract class Service {
         }
 
         protected abstract fun new(): T
-        
+
         fun load() {
             check(this@Service.isEnabled)
 
@@ -89,9 +91,11 @@ abstract class Service {
 
         private fun requireReady(property: KProperty<*>) {
             if (!ready)
-                throw NoSuchElementException("Cannot access ${
-                    this@Service::class.simpleString()
-                }#${property.name}\$${property.returnType.javaType.classOf()} before initialization!")
+                throw NoSuchElementException(
+                    "Cannot access ${
+                        this@Service::class.simpleString()
+                    }#${property.name}\$${property.returnType.javaType.classOf()} before initialization!"
+                )
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -123,6 +127,12 @@ abstract class Service {
                     .toSet()
             }
 
+            val disabled by arg("disabled", emptySet()) {
+                it.split(' ', ',').asSequence()
+                    .map { arg -> arg.trim() }
+                    .toSet()
+            }
+
             if ("." in enabled) {
                 Reflections.types
                     .subtypesOf(Service::class)
@@ -130,7 +140,8 @@ abstract class Service {
                     .map { it.instance }
                     .filterNotNull()
                     .forEach {
-                        it.isEnabled = true
+                        if (it.name !in disabled)
+                            it.isEnabled = true
                     }
             } else
                 Reflections.types
@@ -139,7 +150,7 @@ abstract class Service {
                     .map { it.instance }
                     .filterNotNull()
                     .forEach {
-                        if (it.name in enabled)
+                        if (it.name in enabled && it.name !in disabled)
                             it.isEnabled = true
                     }
         }

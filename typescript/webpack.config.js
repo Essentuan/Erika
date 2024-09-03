@@ -21,15 +21,23 @@ module.exports = {
     mode: "production",
     devtool: false,
     entry: {
-        war: "./src/main/typescript/war/index.ts",
-        test: "./src/main/typescript/test/index.ts"
+        map: "./src/main/typescript/map/index.ts",
+    },
+    module: {
+        rules: [
+            {
+                test: /\.tsx?$/,
+                use: 'ts-loader',
+                exclude: /node_modules/,
+            },
+        ],
     },
     resolve: {
         modules: process.env.NODE_PATH.split(":"),
-        extensions: [".js", ".ts", ".json"],
+        extensions: [".js", ".ts", ".json", ".tsx"],
     },
     output: {
-        path: path.resolve(__dirname, "build/webpack/web/js")
+        path: path.resolve(__dirname, "build/webpack/assets/js")
     },
     optimization: {
         minimize: true,

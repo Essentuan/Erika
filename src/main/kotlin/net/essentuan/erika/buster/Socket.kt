@@ -69,13 +69,13 @@ class Socket(
 
             incoming.consumeEach {
                 if (it is Frame.Text)
-                    launch {
+                    inline {
                         process(it)
                     }
             }
         } catch (_: ClosedReceiveChannelException) {
             //onClose
-        } catch(_ : IOException) {
+        } catch (_: IOException) {
             //Timeout
         } catch (ex: Throwable) {
             LOGGER.error("Uncaught exception in Socket(username=$username, uuid=$uuid, auth=$isOpen)!", ex)

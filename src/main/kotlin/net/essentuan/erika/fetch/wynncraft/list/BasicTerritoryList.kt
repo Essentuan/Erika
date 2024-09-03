@@ -4,6 +4,7 @@ import com.busted_moments.buster.api.GuildType
 import com.busted_moments.buster.api.Territory
 import net.essentuan.erika.fetch.WynnModel
 import net.essentuan.erika.fetch.wynncraft.WynncraftReq
+import net.essentuan.erika.framework.console.Logging
 import net.essentuan.erika.observers.guilds.list.Guilds
 import net.essentuan.esl.Rating
 import net.essentuan.esl.comparing.equals
@@ -18,6 +19,7 @@ import net.essentuan.esl.other.repr
 import java.util.Date
 import java.util.Objects
 import java.util.UUID
+import kotlin.collections.forEach
 
 data class BasicTerritoryList(
     @Alias(["response"])
@@ -27,7 +29,7 @@ data class BasicTerritoryList(
 data class BasicTerritory(
     @Alias(["guild"])
     val owner: BasicOwner,
-    val acquired: Date,
+    val acquired: Date?,
     val location: BasicLocation
 ) : Json.Model
 
@@ -85,12 +87,20 @@ data class BasicPos(
 @Timeout(seconds = 10.0)
 @At("https://beta-api.wynncraft.com/v3/guild/list/territories")
 private class TerritoryListRequest : WynncraftReq<BasicTerritoryList>(NoLimit) {
-    override fun invoke(body: Json): BasicTerritoryList =
-        body.wrap(BasicTerritoryList::class).apply {
+    override fun invoke(body: Json): BasicTerritoryList {
+        body
+            .getJson("response")
+            ?.values
+            ?.removeAll {
+                it.raw is Json && (it.raw as Json).getJson("location")?.isEmpty() == true
+            }
+
+        return body.wrap(BasicTerritoryList::class).apply {
             asSequence().map { (_, it) -> it.owner }.distinctBy { it.uuid }.forEach {
                 Guilds.update(it.uuid, it, metadata.cachedAt ?: Date(), true)
             }
         }
+    }
 }
 
 suspend fun Fetch.territoryList(

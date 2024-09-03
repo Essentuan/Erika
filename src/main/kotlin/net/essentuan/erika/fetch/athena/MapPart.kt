@@ -36,7 +36,7 @@ data class MapPart(
     }
 }
 
-@At("https://raw.githubusercontent.com/Wynntils/WynntilsWebsite-API/master/maps/maps.json")
+@At("https://raw.githubusercontent.com/Wynntils/Static-Storage/main/Reference/maps.json")
 private class MapRequest : JsonRequest<List<MapPart>>() {
     override fun invoke(body: Json): List<MapPart>? =
         body.getList("array", Json::class)?.map { it.wrap(MapPart::class) }

@@ -7,6 +7,7 @@ import net.essentuan.erika.db.struct.territories.MapVersion
 import net.essentuan.erika.db.struct.territories.ResourceType
 import net.essentuan.erika.db.struct.territories.Territory
 import net.essentuan.erika.db.struct.territories.TerritoryRating
+import net.essentuan.erika.fetch.wynncraft.list.BasicTerritory
 import net.essentuan.erika.fetch.wynncraft.list.territoryList
 import net.essentuan.erika.framework.annotation.Priority
 import net.essentuan.erika.framework.console.Logging
@@ -30,6 +31,8 @@ import java.util.Date
 import java.util.EnumMap
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlin.math.max
 import kotlin.math.min
 
@@ -87,12 +90,18 @@ object TerritoryList : Singleton(), ITerritoryList {
     override fun iterator(): Iterator<ITerritory> =
         territories.values.iterator()
 
+    private fun hasBeenCaptured(now: BasicTerritory, before: Territory.State): Boolean =
+        when {
+            before.owner.uuid == Guilds.NONE.uuid || now.acquired == null -> before.owner.uuid != now.owner.uuid
+            else -> before.acquired != now.acquired || (now.owner.uuid == Guilds.NONE.uuid && before.owner.uuid != now.owner.uuid)
+        }
+
     @Every
     @Lifetime(minutes = 1.0)
     private suspend fun update() {
         try {
             val new = fetch { territoryList(priority = Rating.CRITICAL) }
-            if (new == null) {
+            if (new.isNullOrEmpty()) {
                 delay(10.seconds)
                 return
             }
@@ -117,14 +126,12 @@ object TerritoryList : Singleton(), ITerritoryList {
                         val before = territories[name]
 
                         when {
-                            before?.owner == null || if (before.owner.uuid == Guilds.NONE.uuid)
-                                before.owner.uuid != now.owner.uuid
-                            else
-                                before.acquired != now.acquired -> {
+                            before == null || hasBeenCaptured(now, before) -> {
                                 map[name] = Territory.State(
                                     name,
                                     now.owner.uuid,
-                                    if (now.owner.uuid == Guilds.NONE.uuid) new.metadata.cachedAt!! else now.acquired,
+                                    if (now.owner.uuid == Guilds.NONE.uuid) new.metadata.cachedAt!! else (now.acquired
+                                        ?: new.metadata.cachedAt ?: Date()),
                                     emptyMap(),
                                     false,
                                     TerritoryRating.VERY_LOW,
@@ -206,7 +213,7 @@ object TerritoryList : Singleton(), ITerritoryList {
             for ((name, profile) in submission.profiles) {
                 val territory = territories[name]!!
 
-                if (territory.owner.name != profile.owner)
+                if ((territory.owner.uuid != Guilds.NONE.uuid || profile.owner != "No owner") && territory.owner.name != profile.owner)
                     new[name] = territory
                 else {
                     new[name] = Territory.State(
@@ -217,11 +224,11 @@ object TerritoryList : Singleton(), ITerritoryList {
                             for (resource in ResourceType.entries) {
                                 val resources = profile.resources[resource]!!
 
-                               it[resource] = Territory.State.Resource(
-                                   resources.production,
-                                   resources.stored,
-                                   resources.capacity
-                               )
+                                it[resource] = Territory.State.Resource(
+                                    resources.production,
+                                    resources.stored,
+                                    resources.capacity
+                                )
                             }
                         },
                         profile.hq,

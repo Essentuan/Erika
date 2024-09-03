@@ -55,7 +55,7 @@ import java.util.UUID
 
 val LOGGER by Logging
 
-object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by scope(10) {
+object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by scope(3) {
     @Subscribe
     private fun WorldList.UpdateEvent.on() {
         broadcast(ClientboundWorldListPacket(WorldList.lock { external() }))
@@ -105,12 +105,6 @@ object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by sco
     }
 
     override fun Application.start() {
-        install(WebSockets) {
-            extensions {
-                install(Buster)
-            }
-        }
-
         routing {
             webSocket("/buster") {
                 if (!isEnabled)

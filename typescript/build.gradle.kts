@@ -20,9 +20,14 @@ typeScript {
     compilerOptions.putAll(
         mutableMapOf(
             "module" to "es6",
-            "target" to "es6",
+            "target" to "es5",
             "moduleResolution" to "node",
-            "strict" to true
+            "esModuleInterop" to true,
+            "strict" to true,
+            "downlevelIteration" to true,
+            "lib" to listOf("dom", "es2020"),
+            "jsx" to "react",
+            "reactNamespace" to "JSX"
         )
     )
 }
@@ -44,7 +49,7 @@ eslint {
 
 webpack {
     outputDir.set(
-        (buildDir.toPath()/"webpack"/"web"/"js").toFile()
+        (buildDir.toPath() / "webpack" / "web" / "js").toFile()
     )
 
     config("webpack.config.js")
@@ -69,7 +74,9 @@ dependencies {
     //Webpack
     add("webpack", "npm:source-map-loader:4.0.0")
     add("webpack", "npm:webpack:5.74.0")
-    add("webpack", "npm:webpack-cli:4.7.0")
+    add("webpack", "npm:webpack-cli:5.1.4") {
+        exclude("npm:commander")
+    }
 
     add("webpack", "npm:types/eslint:8.4.5")
     add("webpack", "npm:types/node:18.6.2")
@@ -80,4 +87,21 @@ dependencies {
     }
 
     types("npm:types/geojson:7946.0.14")
+
+    deps("npm:jquery:3.7.1")
+    types("npm:types/jquery:3.5.30") {
+        exclude("npm:types/sizzle:*")
+    }
+
+    types("npm:types/sizzle:2.3.8")
+
+    deps("npm:sequency:0.20.0")
+
+    deps("npm:tinycolor2:1.6.0")
+    types("npm:types/tinycolor2:1.4.6")
+
+    deps("npm:typed-duration:2.0.0")
+
+    deps("npm:humanize-duration:3.32.1")
+    types("npm:types/humanize-duration:3.27.4")
 }
