@@ -9,6 +9,7 @@ import net.essentuan.erika.buster.BusterService.socket
 import net.essentuan.erika.buster.Listener
 import net.essentuan.erika.buster.Socket
 import net.essentuan.erika.buster.events.BusterEvent
+import net.essentuan.erika.framework.console.Logging
 import net.essentuan.erika.framework.db.`object`.types.Singleton
 import net.essentuan.erika.framework.events.annotations.Subscribe
 import net.essentuan.erika.framework.events.events
@@ -31,7 +32,7 @@ import net.essentuan.esl.time.duration.seconds
 import java.util.UUID
 
 object GuildListener : Singleton() {
-    val guilds = mutableMapOf<UUID, BusterGuild>()
+    var guilds = mutableMapOf<UUID, BusterGuild>()
 
     val Socket.guild: BusterGuild?
         get() {
@@ -96,7 +97,7 @@ object GuildListener : Singleton() {
 
                 if (previous == null)
                     enqueue(timer)
-                else if (previous.remaining > 1.minutes && !previous.trusted && timer.trusted)
+                else if (!previous.trusted && timer.trusted)
                     enqueue(previous.copy(defense = timer.defense, trusted = true))
 
             }
@@ -127,16 +128,19 @@ class BusterGuild(
     fun find(timer: AttackTimer, strict: Boolean = true, territory: String = timer.territory): AttackTimer? {
         return if (strict) {
             timers[territory].firstOrNull {
-                it.territory == territory && (it.remaining - timer.remaining).abs() < 1.minutes
+                it.territory == territory && (it.remaining - timer.remaining).abs() < 105.seconds
             }
         } else
             timers.values().firstOrNull {
-                it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < 1.minutes
+                it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < 105.seconds
             }
     }
 
     fun enqueue(timer: AttackTimer) {
         lock {
+            if (timer in timers[timer.territory])
+                timers.remove(timer.territory, timer)
+
             timers.put(timer.territory, timer)
 
             values.toList()
