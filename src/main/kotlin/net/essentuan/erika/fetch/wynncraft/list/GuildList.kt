@@ -29,7 +29,7 @@ suspend fun Fetch.guildList(
 ) = GuildListRequest().execute(priority)
 
 @Timeout(seconds = 10.0)
-@At("https://beta-api.wynncraft.com/v3/guild/list/guild")
+@At("https://api.wynncraft.com/v3/guild/list/guild")
 private class GuildListRequest : WynncraftReq<GuildList>(rateLimit = NoLimit) {
     override fun invoke(body: Json): GuildList? {
         return GuildList(

@@ -74,7 +74,7 @@ data class BasicMember(
 ) : Json.Model
 
 @Timeout(seconds = 90.0)
-@At("https://beta-api.wynncraft.com/v3/guild/%s%s")
+@At("https://api.wynncraft.com/v3/guild/%s%s")
 private class Request(
     val query: String,
     type: String

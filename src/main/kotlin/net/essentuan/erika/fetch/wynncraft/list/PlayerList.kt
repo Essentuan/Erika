@@ -28,7 +28,7 @@ suspend fun <T> Fetch.playerList(
 ) = PlayerListRequest(identifier).execute(priority)
 
 @Timeout(seconds = 10.0)
-@At("https://beta-api.wynncraft.com/v3/player?identifier=%s")
+@At("https://api.wynncraft.com/v3/player?identifier=%s")
 private class PlayerListRequest<T>(
     val identifier: Identifier<T>
 ) : WynncraftReq<PlayerList<T>>(identifier.type()) {

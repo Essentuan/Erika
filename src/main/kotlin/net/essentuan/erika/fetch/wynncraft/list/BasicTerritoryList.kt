@@ -85,7 +85,7 @@ data class BasicPos(
 }
 
 @Timeout(seconds = 10.0)
-@At("https://beta-api.wynncraft.com/v3/guild/list/territories")
+@At("https://api.wynncraft.com/v3/guild/list/territories")
 private class TerritoryListRequest : WynncraftReq<BasicTerritoryList>(NoLimit) {
     override fun invoke(body: Json): BasicTerritoryList {
         body

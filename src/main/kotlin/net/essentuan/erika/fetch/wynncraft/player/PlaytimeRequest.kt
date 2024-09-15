@@ -19,7 +19,7 @@ data class PlaytimeResult(
     val playtime: Duration
 ) : WynnModel()
 
-@At("https://beta-api.wynncraft.com/v3/player/%s")
+@At("https://api.wynncraft.com/v3/player/%s")
 private class PlaytimeRequest(
     uuid: UUID
 ) : WynncraftReq<PlaytimeResult>(uuid.toString()) {
