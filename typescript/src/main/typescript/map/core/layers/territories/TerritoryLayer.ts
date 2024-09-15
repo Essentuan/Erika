@@ -32,7 +32,8 @@ export class TerritoryLayerType implements LayerType {
             this.tiles = list.tiles.id
         }
 
-        const added = new Set<String>()
+        const added = new Set<string>()
+        const changed = new Set<string>()
 
         asSequence(Object.keys(list.territories))
             .plus(asSequence(this.elements.keys()))
@@ -46,15 +47,24 @@ export class TerritoryLayerType implements LayerType {
                     this.elements.get(it)?.removeFrom(this.layer)
                     this.elements.delete(it)
                 } else {
-                    this.elements.get(it)!.territory = list.territories[it]
+                    const element = this.elements.get(it)!;
+                    const territory = list.territories[it]!
+
+                    if (territory.owner.uuid != element.owner.uuid)
+                        changed.add(it)
+
+                    element.territory = territory
                 }
             })
 
         for (const [name, territory] of this.elements.entries()) {
-            territory.redraw(this.tooltip)
+            if (changed.has(name))
+                territory.redraw(this.tooltip)
+            else if (added.has(name)) {
+                territory.redraw(this.tooltip)
 
-            if (added.has(name))
                 territory.addTo(this.layer)
+            }
         }
 
         for (const territory of this.elements.values())
