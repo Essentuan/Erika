@@ -15,11 +15,7 @@ import net.essentuan.esl.reflections.extensions.instance
 
 object KtorService : Service(), ApplicationEngine {
     private val engine: ApplicationEngine by this {
-        embeddedServer(Netty, port = arg("port", 25569, String::toInt).value, configure = {
-            connectionGroupSize = 20
-            workerGroupSize = 20
-            callGroupSize = 15
-        }) {
+        embeddedServer(Netty, port = arg("port", 25569, String::toInt).value) {
             install(IgnoreTrailingSlash)
 
             install(WebSockets) {
