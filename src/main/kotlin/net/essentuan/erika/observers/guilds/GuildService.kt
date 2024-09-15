@@ -2,6 +2,7 @@ package net.essentuan.erika.observers.guilds
 
 import com.busted_moments.buster.api.Guild
 import com.busted_moments.buster.api.GuildType
+import com.google.gson.stream.MalformedJsonException
 import net.essentuan.erika.awaitReady
 import net.essentuan.erika.db.struct.guild.GuildModel
 import net.essentuan.erika.db.struct.guild.search.invoke
@@ -23,6 +24,7 @@ import net.essentuan.esl.future.api.Future
 import net.essentuan.esl.json.Json
 import net.essentuan.esl.map
 import net.essentuan.esl.model.annotations.Alias
+import net.essentuan.esl.other.causedBy
 import net.essentuan.esl.rx.discard
 import net.essentuan.esl.rx.distinct
 import net.essentuan.esl.rx.filter
@@ -115,10 +117,12 @@ object GuildService : Service() {
             } catch (ex: Exception) {
                 val type = Guilds[guild.uuid]
 
-                if (type == null)
-                    LOGGER.info("Failed to update ${guild.uuid}!", ex)
-                else
-                    LOGGER.info("Failed to update ${type.name} [${type.tag}]!", ex)
+                if (!ex.causedBy<MalformedJsonException>()) {
+                    if (type == null)
+                        LOGGER.info("Failed to update ${guild.uuid}!", ex)
+                    else
+                        LOGGER.info("Failed to update ${type.name} [${type.tag}]!", ex)
+                }
             }
 
             val wait = 2.seconds - start.timeSince()
