@@ -59,10 +59,10 @@ private suspend fun Socket.on(request: AuthRequest) {
                 }?.close()
 
                 request.fulfill(this.account.external())
-                send(ClientboundWorldListPacket(WorldList.lock { external() }))
-                send(ClientboundGuildListPacket(Guilds.lock { external() }))
                 send(ClientboundMapPacket(TerritoryList.external()))
                 send(ClientboundFFAListPacket(FFAList.lock { toSet() }))
+                send(ClientboundGuildListPacket(Guilds.lock { external() }))
+                send(ClientboundWorldListPacket(WorldList.lock { external() }))
 
                 LOGGER.info("$username ($uuid) has logged in.")
                 BusterEvent.Connect(this).post()
