@@ -71,7 +71,9 @@ fun main(args: Array<String>) {
     Commands.start()
 
     Scheduler.apply {
-        capacity = 30
+        capacity = 50
+        DISPATCHER = GlobalScope
+
         this += Logging
 
         start()
