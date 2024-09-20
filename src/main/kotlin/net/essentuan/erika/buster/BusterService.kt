@@ -7,6 +7,7 @@ import com.busted_moments.buster.protocol.Packet
 import com.busted_moments.buster.protocol.clientbound.ClientboundGuildListPacket
 import com.busted_moments.buster.protocol.clientbound.ClientboundMapPacket
 import com.busted_moments.buster.protocol.clientbound.ClientboundWorldListPacket
+import dev.kord.common.entity.Snowflake
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
 import io.ktor.server.routing.routing
@@ -157,6 +158,8 @@ object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by sco
     object Constants : Singleton() {
         var trustedCutoff = 2
         var guildCutoff = 2
+
+        var releaseManager: Snowflake? = Snowflake(299319853389578240)
     }
 
     val PlayerType.socket: Socket?
