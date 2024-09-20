@@ -27,13 +27,13 @@ value class ContentBuilder(
         }
     }
 
-   operator fun Any?.unaryPlus() =
-       append(this)
-    
+    operator fun Any?.unaryPlus() =
+        append(this)
+
     fun newLine() {
         builder.append('\n')
     }
-    
+
     override fun toString(): String =
         builder.toString()
 }
@@ -60,6 +60,10 @@ inline fun EmbedBuilder.title(block: ContentBuilder.() -> Unit) {
 
 inline fun EmbedBuilder.description(block: ContentBuilder.() -> Unit) {
     description = ContentBuilder().also(block).toString()
+}
+
+inline fun EmbedBuilder.Author.name(block: ContentBuilder.() -> Unit) {
+    name = ContentBuilder().also(block).toString()
 }
 
 inline fun EmbedBuilder.Footer.text(block: ContentBuilder.() -> Unit) {
