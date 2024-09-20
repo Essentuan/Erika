@@ -7,6 +7,7 @@ import {Leaflet} from "../../Leaflet";
 import {DefaultTooltip} from './DefaultTooltip';
 import {asSequence} from 'sequency'
 import {LinkLayer} from "./LinkLayer";
+import {Resource} from "../../../api/territories/Resource";
 
 export class TerritoryLayerType implements LayerType {
     private readonly layer = L.layerGroup<L.Rectangle>()
@@ -50,8 +51,13 @@ export class TerritoryLayerType implements LayerType {
                     const element = this.elements.get(it)!;
                     const territory = list.territories[it]!
 
-                    if (territory.owner.uuid != element.owner.uuid)
+                    if (territory.owner.uuid != element.owner.uuid || territory.hq != element.hq)
                         changed.add(it)
+
+                    for (let [resource, prod] of Object.entries(territory.resources)) {
+                        if (element.resources[resource as Resource].base != prod.base)
+                            changed.add(it)
+                    }
 
                     element.territory = territory
                 }
