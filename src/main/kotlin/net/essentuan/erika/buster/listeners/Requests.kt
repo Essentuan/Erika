@@ -6,6 +6,7 @@ import com.busted_moments.buster.protocol.Packet
 import com.busted_moments.buster.protocol.Request
 import com.busted_moments.buster.protocol.requests.GuildRequest
 import com.busted_moments.buster.protocol.requests.MemberRequest
+import com.busted_moments.buster.protocol.requests.PingRequest
 import net.essentuan.erika.buster.BusterService
 import net.essentuan.erika.buster.PacketListener
 import net.essentuan.erika.buster.Socket
@@ -52,6 +53,14 @@ object Requests {
                 else
                     Guild.Member(it.member, create = true).map { (_, result) -> result }.first()
                         .map { member -> member.lock { external() } }.orNull()
+            }
+        }
+
+        PingRequest::class {
+            by { it.ray }
+
+            fetch {
+                return@fetch 0
             }
         }
     }

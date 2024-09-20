@@ -8,7 +8,6 @@ import io.ktor.server.routing.IgnoreTrailingSlash
 import io.ktor.server.websocket.*
 import net.essentuan.erika.arg
 import net.essentuan.erika.framework.Service
-import net.essentuan.erika.ktor.KtorService.engine
 import net.essentuan.esl.reflections.Reflections
 import net.essentuan.esl.reflections.Types.Companion.objects
 import net.essentuan.esl.reflections.extensions.instance
