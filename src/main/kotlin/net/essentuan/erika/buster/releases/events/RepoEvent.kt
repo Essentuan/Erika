@@ -12,6 +12,6 @@ abstract class RepoEvent<T : Repository>(
         repo: T,
         val release: GhRelease
     ) : RepoEvent<T>(repo) {
-        val previous: GhRelease? = repo.firstOrNull()
+        val previous: GhRelease? = repo.lastOrNull()
     }
 }

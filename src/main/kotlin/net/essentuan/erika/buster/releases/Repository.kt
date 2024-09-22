@@ -64,7 +64,7 @@ abstract class Repository(
             return
         }
 
-        if (firstOrNull()?.tag == latest.tag)
+        if (lastOrNull()?.tag == latest.tag)
             return
 
         RepoEvent.Release(this, latest).post()

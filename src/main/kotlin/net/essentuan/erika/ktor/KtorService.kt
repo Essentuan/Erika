@@ -6,8 +6,10 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.Netty
 import io.ktor.server.routing.IgnoreTrailingSlash
 import io.ktor.server.websocket.*
+import net.essentuan.erika.ShutdownEvent
 import net.essentuan.erika.arg
 import net.essentuan.erika.framework.Service
+import net.essentuan.erika.framework.events.annotations.Subscribe
 import net.essentuan.esl.reflections.Reflections
 import net.essentuan.esl.reflections.Types.Companion.objects
 import net.essentuan.esl.reflections.extensions.instance
@@ -46,4 +48,9 @@ object KtorService : Service(), ApplicationEngine {
 
     override fun stop(gracePeriodMillis: Long, timeoutMillis: Long) =
         engine.stop(gracePeriodMillis, timeoutMillis)
+
+    @Subscribe
+    private fun ShutdownEvent.on() {
+        isEnabled = false
+    }
 }

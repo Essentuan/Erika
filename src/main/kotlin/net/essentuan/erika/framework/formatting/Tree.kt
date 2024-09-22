@@ -1,7 +1,10 @@
 package net.essentuan.erika.framework.formatting
 
+import kotlinx.coroutines.yield
 import net.essentuan.erika.framework.console.AnsiColor
+import net.essentuan.esl.Result
 import net.essentuan.esl.iteration.extensions.iterate
+import java.util.LinkedList
 import java.util.stream.Collectors
 import kotlin.experimental.ExperimentalTypeInference
 
@@ -79,26 +82,64 @@ abstract class Tree<T>(private val comparator: Comparator<T>?) {
     }
 }
 
+
 @OverloadResolutionByLambdaReturnType
 @OptIn(ExperimentalTypeInference::class)
-inline fun <T> tree(
-    crossinline branch: T.() -> Iterable<T>,
+inline fun <reified T> tree(
+    crossinline branch: T.() -> Any,
+    vararg elements: Any,
     comparator: Comparator<T>? = null,
     crossinline writer: T.(StringBuilder) -> Unit
 ): String {
     return object : Tree<T>(comparator) {
+        init {
+            this += flatten(elements).iterator()
+        }
+
+        private fun flatten(vararg array: Any?): Sequence<T> = sequence {
+            val queue = LinkedList<Any>(array.asList())
+
+            while (queue.isNotEmpty()) {
+                when (val obj = queue.poll()) {
+                    is List<*> -> {
+                        for (e in obj.asReversed())
+                            queue.offerFirst(e)
+                    }
+
+                    is Array<*> ->
+                        queue.offerFirst(obj.asList())
+                    
+                    is Iterable<*> ->
+                        queue.offerFirst(obj.toList())
+
+                    is Iterator<*> -> {
+                        val list = mutableListOf<Any?>()
+
+                        for (e in obj)
+                            list += e
+
+                        queue.offerFirst(list)
+                    }
+
+                    is Result.Value<*> -> {
+                        if (obj.value is T)
+                            yield(obj.value as T)
+                        else
+                            queue.offerFirst(obj.value)
+                    }
+
+                    else -> {
+                        if (obj is T)
+                            yield(obj)
+                    }
+                }
+            }
+        }
+
         override fun branch(element: T): Iterable<T> =
-            branch(element)
+            flatten(branch(element)).asIterable()
 
         override fun write(element: T, sb: StringBuilder) =
             writer(element, sb)
     }.toString()
 }
-
-@JvmName("treeIterator")
-inline fun <T> tree(
-    crossinline branch: T.() -> Iterator<T>,
-    comparator: Comparator<T>? = null,
-    crossinline writer: T.(StringBuilder) -> Unit
-): String =
-    tree({ Iterable { branch() } }, comparator, writer)

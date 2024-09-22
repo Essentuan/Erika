@@ -56,8 +56,9 @@ import java.util.UUID
 
 val LOGGER by Logging
 
-object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by scope(3) {
+object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by scope("buster", 7) {
     @Every(seconds = 30.0)
+    @Lifetime(seconds = 30.0)
     private fun broadcastWorldList() {
         broadcast(ClientboundWorldListPacket(WorldList.lock { external() }))
     }

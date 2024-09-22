@@ -108,7 +108,10 @@ object GuildListener : Singleton() {
 class BusterGuild(
     override val uuid: UUID,
     timers: Set<AttackTimer> = emptySet()
-) : Json.Model, GuildType by Guilds[uuid]!!, MutableMap<UUID, Socket> by mutableMapOf() {
+) : Json.Model, GuildType, MutableMap<UUID, Socket> by mutableMapOf() {
+    @Ignored
+    private val type by lazy { Guilds[uuid]!! }
+
     @Ignored
     val timers: SetMultimap<String, AttackTimer> =
         Multimaps.hashKeys().hashSetValues()
@@ -182,4 +185,9 @@ class BusterGuild(
     private fun BusterEvent.Disconnect.on() {
         remove(socket.account.profile.uuid)
     }
+
+    override val name: String
+        get() = type.name
+    override val tag: String
+        get() = type.tag
 }

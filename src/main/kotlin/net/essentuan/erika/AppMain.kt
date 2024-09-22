@@ -1,10 +1,7 @@
 package net.essentuan.erika
 
 import com.busted_moments.buster.Buster
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.*
 import net.essentuan.erika.commands.MEMORY_DEBUG_ENABLED
 import net.essentuan.erika.framework.console.Commands
 import net.essentuan.erika.framework.console.Logging
@@ -31,6 +28,7 @@ import net.essentuan.esl.time.extensions.timeSince
 import java.nio.file.FileSystems
 import java.nio.file.Paths
 import java.util.Date
+import java.util.UUID
 import java.util.concurrent.Executors
 import kotlin.collections.set
 import kotlin.concurrent.thread
@@ -64,15 +62,14 @@ fun main(args: Array<String>) {
         if (reader.canRead() && reader.peek() == '-')
             reader.skip()
     }
-
-    Reflections.register("net.essentuan.erika")
+    
     Buster
 
     Commands.start()
 
     Scheduler.apply {
         capacity = 50
-        DISPATCHER = GlobalScope
+        DISPATCHER = CoroutineScope(newFixedThreadPoolContext(20, "scheduler"))
 
         this += Logging
 
@@ -106,8 +103,9 @@ fun main(args: Array<String>) {
     }
 }
 
-fun scope(threads: Int): CoroutineScope =
-    CoroutineScope(Executors.newScheduledThreadPool(threads).asCoroutineDispatcher())
+@OptIn(DelicateCoroutinesApi::class)
+fun scope(name: String, threads: Int): CoroutineScope =
+    CoroutineScope(newFixedThreadPoolContext(threads, name))
 
 private var last: Date = Date()
 

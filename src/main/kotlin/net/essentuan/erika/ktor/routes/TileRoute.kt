@@ -19,21 +19,17 @@ object TileRoute : Route.Container() {
     @GET("tile")
     private suspend fun get(id: String, x: Int, y: Int, zoom: Int): BufferedImage? {
         return withContext(THREAD_POOL) {
-            try {
-                find<Tile.Set> {
-                    select from Tile.Set
+            find<Tile.Set> {
+                select from Tile.Set
 
-                    where {
-                        "_id" eq ObjectId(id)
-                    }
-                }.findFirst()
-                    .map {
-                        it.draw(x, y, zoom)
-                    }
-                    .orElse(null)
-            } catch (ex: Exception) {
-                null
-            }
+                where {
+                    "_id" eq ObjectId(id)
+                }
+            }.findFirst()
+                .map {
+                    it.draw(x, y, zoom)
+                }
+                .orElse(null)
         }
     }
 }

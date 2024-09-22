@@ -35,6 +35,7 @@ import net.essentuan.esl.time.duration.Duration
 import java.awt.image.BufferedImage
 import java.lang.reflect.AnnotatedElement
 import java.nio.file.Path
+import javax.imageio.IIOException
 import javax.imageio.ImageIO
 import kotlin.io.path.exists
 import kotlin.io.path.inputStream
@@ -263,10 +264,16 @@ suspend fun ApplicationCall.respond(data: Any?, status: HttpStatusCode? = null) 
 
         is Model<*> -> respond(data.export(), status ?: HttpStatusCode.OK)
 
-        is BufferedImage -> respondOutputStream(
-            contentType = ContentType.Image.PNG,
-            status = status ?: HttpStatusCode.OK
-        ) { ImageIO.write(data, "png", this) }
+        is BufferedImage -> {
+            try {
+                respondOutputStream(
+                    contentType = ContentType.Image.PNG,
+                    status = status ?: HttpStatusCode.OK
+                ) { ImageIO.write(data, "png", this) }
+            } catch (ex: IIOException) {
+                //Ignore this
+            }
+        }
 
         else -> throw IllegalArgumentException("Cannot respond with ${data::class.simpleString()}!")
     }

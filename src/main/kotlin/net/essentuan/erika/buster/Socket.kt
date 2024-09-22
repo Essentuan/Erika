@@ -123,7 +123,7 @@ class Socket(
 
     @OptIn(DelicateCoroutinesApi::class)
     fun send(payload: ByteArray) {
-        inline {
+        BusterService.launch {
             val frame = Frame.Text(
                 true,
                 payload
@@ -131,7 +131,7 @@ class Socket(
 
             for (i in 0..3) {
                 if (outgoing.trySend(frame).isSuccess || outgoing.isClosedForSend)
-                    return@inline
+                    return@launch
                 else
                     delay(200.ms)
             }
