@@ -15,6 +15,9 @@ import net.essentuan.esl.color.Color
 value class ContentBuilder(
     private val builder: StringBuilder = StringBuilder()
 ) {
+    val isEmpty: Boolean
+        get() = builder.isEmpty()
+
     fun append(obj: Any?) {
         when (obj) {
             is String -> builder.append(obj)

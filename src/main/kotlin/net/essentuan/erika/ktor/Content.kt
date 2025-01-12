@@ -21,8 +21,8 @@ object Content {
         override suspend fun serializeNullable(charset: Charset, typeInfo: TypeInfo, value: Any?): Frame {
             return Frame.Text(
                 true,
-                when(value) {
-                        null -> "{}"
+                when (value) {
+                    null -> "{}"
                     is Exportable<*> -> (value.external() as IJson).asString()
                     is IJson -> value.asString()
                     is JsonModel -> value.export(BsonModel.EXTERNAL).asString()
