@@ -61,6 +61,8 @@ class Socket(
         private set
 
     suspend fun start() {
+        session.closeReason
+
         try {
             events.register()
             send(ClientboundLoginPacket(id))
@@ -90,6 +92,8 @@ class Socket(
         if (result is Result.Fail<*>) {
             if (result.cause is PacketFormatException) {
                 close()
+
+                LOGGER.error("Error in socket", result.cause)
 
                 return
             }
@@ -124,19 +128,7 @@ class Socket(
     @OptIn(DelicateCoroutinesApi::class)
     fun send(payload: ByteArray) {
         BusterService.launch {
-            val frame = Frame.Text(
-                true,
-                payload
-            )
-
-            for (i in 0..3) {
-                if (outgoing.trySend(frame).isSuccess || outgoing.isClosedForSend)
-                    return@launch
-                else
-                    delay(200.ms)
-            }
-
-            LOGGER.error("Failed to send packet to $username ($uuid)!")
+            outgoing.send(Frame.Text(true, payload))
         }
     }
 
