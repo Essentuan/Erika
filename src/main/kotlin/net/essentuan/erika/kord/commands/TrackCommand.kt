@@ -14,6 +14,7 @@ import net.essentuan.erika.kord.framework.message.description
 import net.essentuan.erika.kord.framework.message.embed
 import net.essentuan.erika.kord.framework.message.title
 import net.essentuan.erika.kord.tracks.TrackManager
+import net.essentuan.erika.kord.tracks.lanes.IcoEventLane
 import net.essentuan.erika.kord.tracks.lanes.TerritoryLane
 import net.essentuan.esl.color.McColor
 
@@ -84,6 +85,35 @@ object TrackCommand {
                         +guild.tag
                         +"]!"
                     }
+                }
+            }
+        }
+    }
+
+    @Subcommand("raids")
+    private suspend fun CommandInteraction.raids(
+        @Named("channel") resolved: Channel = this.channel
+    ) {
+        val channel = resolved.fetchChannelOrNull()
+
+        if (channel == null || channel !is TextChannel) {
+            ephemeral {
+                embed(McColor.DARK_RED) {
+                    title {
+                        +"You must specify a channel!"
+                    }
+                }
+            }
+
+            return
+        }
+
+        TrackManager.getOrCreate(channel, source) += IcoEventLane()
+
+        ephemeral {
+            embed(McColor.GREEN) {
+                description {
+                    +"Successfully starting tracking ICo raids!"
                 }
             }
         }
