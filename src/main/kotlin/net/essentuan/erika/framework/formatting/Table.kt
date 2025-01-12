@@ -7,12 +7,17 @@ import kotlin.math.max
 const val JUSTIFY_LEFT = 0
 const val JUSTIFY_RIGHT = 1
 
-@JvmInline
-value class Table(
+class Table(
     private val cols: MutableList<Column> = mutableListOf<Column>()
 ) {
+    var header: String = ""
+
     operator fun Column.unaryPlus() {
         cols += this
+    }
+
+    inline fun header(block: StringBuilder.() -> Unit) {
+        header = buildString(block)
     }
 
     inline fun column(title: String, justify: Int = JUSTIFY_LEFT, block: Column.() -> Unit) {
@@ -31,7 +36,7 @@ value class Table(
     private fun StringBuilder.fill(c: Char, n: Int) {
         ensureCapacity(length + n)
 
-        for (i in 0..n)
+        for (i in 0..<n)
             append(c)
     }
 
@@ -50,6 +55,16 @@ value class Table(
 
             if (hasNext())
                 out.append(" | ")
+        }
+
+        if (header.isNotEmpty()) {
+            out.insert(0, buildString {
+                fill(' ', max((out.length - header.length) / 2, 0))
+
+                append(header)
+                append('\n')
+                append('\n')
+            })
         }
 
         out.newLine()
