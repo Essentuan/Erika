@@ -19,6 +19,7 @@ import net.essentuan.esl.time.duration.minutes
 import net.essentuan.esl.time.extensions.timeSince
 import java.util.Date
 import java.util.IdentityHashMap
+import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 
@@ -26,9 +27,9 @@ private const val PUBLIC = false
 private const val EPHEMERAL = true
 
 //Prevents active page responders from being garbage collected
-private val active = IdentityHashMap<Paged, Boolean>().setOf()
+private val active = IdentityHashMap<Pagination, Boolean>().setOf()
 
-abstract class Paged(
+abstract class Pagination(
     private val ephemeral: Boolean,
     private val interaction: CommandInteraction,
     private val buttons: Set<String>,
@@ -41,7 +42,7 @@ abstract class Paged(
         events.register()
         tasks.resume()
 
-        active.lock { add(this@Paged) }
+        active.lock { add(this@Pagination) }
     }
 
     private val id = Snowflake.create()
@@ -101,6 +102,9 @@ abstract class Paged(
             close()
     }
 
+    fun Collection<*>.split(elementsPerPage: Int): Int =
+        ceil(size/elementsPerPage.toFloat()).toInt()
+
     fun body(body: suspend MessageModifyBuilder.(page: suspend ContentBuilder.() -> Unit) -> Unit) {
         this.body = body
     }
@@ -155,7 +159,7 @@ abstract class Paged(
                             interactionButton(ButtonStyle.Primary, id) { label = emoji("arrow_forward") }
 
                         REFRESH ->
-                            interactionButton(ButtonStyle.Secondary, id) { label = emoji("repeat") }
+                            interactionButton(ButtonStyle.Secondary, id) { label = "\u21bb" }
 
                         CANCEL ->
                             interactionButton(ButtonStyle.Danger, id) { label = "Cancel" }
@@ -185,7 +189,7 @@ abstract class Paged(
         events.unregister()
         tasks.close()
 
-        active.lock { remove(this@Paged) }
+        active.lock { remove(this@Pagination) }
 
         respond(true)
     }
@@ -201,18 +205,18 @@ abstract class Paged(
     }
 }
 
-suspend inline fun CommandInteraction.paged(
+suspend inline fun CommandInteraction.pagination(
     vararg buttons: String = arrayOf(
-        Paged.PREVIOUS_PAGE,
-        Paged.NEXT_PAGE,
-        Paged.REFRESH,
-        Paged.CANCEL
+        Pagination.PREVIOUS_PAGE,
+        Pagination.NEXT_PAGE,
+        Pagination.REFRESH,
+        Pagination.CANCEL
     ),
     expiry: Duration = 2.minutes,
     ephemeral: Boolean = false,
-    crossinline block: suspend Paged.() -> Unit
+    crossinline block: suspend Pagination.() -> Unit
 ) {
-    object : Paged(ephemeral, this@paged, buttons.toSet(), expiry) {
+    object : Pagination(ephemeral, this@pagination, buttons.toSet(), expiry) {
         override suspend fun build() =
             block()
     }.refresh()

@@ -20,7 +20,7 @@ import net.essentuan.erika.kord.framework.commands.annotations.Requires
 import net.essentuan.erika.kord.framework.commands.annotations.Whitelist
 import net.essentuan.erika.kord.framework.message.description
 import net.essentuan.erika.kord.framework.message.embed
-import net.essentuan.erika.kord.framework.message.paged
+import net.essentuan.erika.kord.framework.message.pagination
 import net.essentuan.erika.kord.framework.message.text
 import net.essentuan.erika.kord.framework.message.title
 import net.essentuan.erika.observers.guilds.list.Guilds
@@ -59,7 +59,7 @@ object InactivityCommand : Singleton() {
 
         val guild = Guild(type.uuid).map { (_, it) -> it.orThrow() }.first()
 
-        paged(expiry = 10.minutes) {
+        pagination(expiry = 10.minutes) {
             val members = guild.lock { toList() }
                 .asSequence()
                 .map { Computed(it) }
