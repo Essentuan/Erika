@@ -61,14 +61,14 @@ fun CommandContext<*>.master(
 
 private suspend fun fetch(fuyTag: String, wynntilsTag: String, hash: Boolean = true): Pair<Release, Release>? {
     val fuy = Release(FuyRepo, FuyRepo.getReleases()?.firstOrNull {
-        it.tag == fuyTag
+        it.tag.version == fuyTag
     } ?: run {
         Logging.error("Could not find tag $fuyTag in fuy.gg releases!")
         return null
     }, hash)
 
     val wynntils = Release(WynntilsRepo, WynntilsRepo.getReleases()?.firstOrNull {
-        it.tag == wynntilsTag
+        it.tag.version == wynntilsTag
     } ?: run {
         Logging.error("Could not find tag $wynntilsTag in Wynntils releases!")
         return null

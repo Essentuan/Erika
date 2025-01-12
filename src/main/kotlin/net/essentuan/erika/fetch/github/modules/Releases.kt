@@ -9,6 +9,7 @@ import net.essentuan.esl.json.Json
 import net.essentuan.esl.model.Model.Companion.wrap
 import net.essentuan.esl.model.annotations.Alias
 import net.essentuan.esl.model.annotations.Override
+import org.semver4j.Semver
 import java.net.URL
 import java.util.Date
 
@@ -19,7 +20,7 @@ data class Release(
     val id: Long,
     val name: String,
     @Alias(["tag_name"])
-    val tag: String,
+    val tag: Semver,
     @Alias(["created_at"])
     val createdAt: Date,
     private val assets: List<Asset>,

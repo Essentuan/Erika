@@ -8,6 +8,7 @@ import net.essentuan.erika.fetch.github.modules.GhRelease
 import net.essentuan.esl.collections.builders.mutableMap
 import net.essentuan.esl.delegates.lateinit
 import net.essentuan.esl.json.Json
+import org.semver4j.Semver
 import java.io.InputStream
 import java.net.URL
 import java.security.MessageDigest
@@ -39,7 +40,7 @@ private suspend fun hash(url: URL): String {
 }
 
 data class Release(
-    val tag: String,
+    val tag: Semver,
     val mc: String,
     val asset: Asset,
     val hash: String
@@ -105,11 +106,9 @@ object FuyRepo : Repository(
         }
 
         for (candidate in candidates)
-            candidate.wynntils.sortBy { it -> it.tag }
+            candidate.wynntils.sortBy { it.tag }
 
-        candidates.sortBy { it ->
-            it.fuy.tag
-        }
+        candidates.sortBy { it.fuy.tag }
     }
 
     fun remove(releases: Pair<Release, Release>) = synchronized(this.versions) {

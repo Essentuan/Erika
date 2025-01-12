@@ -257,7 +257,7 @@ abstract class Repository(
                     val (fuyTag, wynntilsTag) = interaction.componentId.removePrefix("br|").split("|")
 
                     val fuy = FuyRepo.firstOrNull {
-                        it.tag == fuyTag
+                        it.tag.version == fuyTag
                     } ?: run {
                         interaction.respondEphemeral {
                             embed(McColor.DARK_RED) {
@@ -269,7 +269,7 @@ abstract class Repository(
                     }
 
                     val wynntils = WynntilsRepo.firstOrNull {
-                        it.tag == wynntilsTag
+                        it.tag.version == wynntilsTag
                     } ?: run {
                         interaction.respondEphemeral {
                             embed(McColor.DARK_RED) {

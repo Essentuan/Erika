@@ -29,6 +29,7 @@ val mongo_version: String by project
 val brigadier_version: String by project
 val acf_version: String by project
 val buster_version: String by project
+val semver_version: String by project
 val kord_version: String by project
 val emoji_version: String by project
 
@@ -83,6 +84,7 @@ dependencies {
     implementation("com.essentuan:acf:$acf_version")
 
     implementation("com.github.essentuan:buster:v$buster_version")
+    implementation("org.semver4j:semver4j:$semver_version")
 
     implementation("dev.kord:kord-core:$kord_version")
     implementation("dev.kord:kord-common:$kord_version")
