@@ -19,7 +19,7 @@ const path = require("path")
 
 module.exports = {
     mode: "production",
-    devtool: false,
+    devtool: 'source-map',
     entry: {
         map: "./src/main/typescript/map/index.ts",
     },

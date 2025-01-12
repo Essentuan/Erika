@@ -22,6 +22,7 @@ typeScript {
             "module" to "es6",
             "target" to "es5",
             "moduleResolution" to "node",
+            "sourceMap" to true,
             "esModuleInterop" to true,
             "strict" to true,
             "downlevelIteration" to true,
