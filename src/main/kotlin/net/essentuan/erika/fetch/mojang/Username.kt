@@ -1,5 +1,6 @@
 package net.essentuan.erika.fetch.mojang
 
+import com.google.gson.stream.MalformedJsonException
 import net.essentuan.erika.framework.console.Logging
 import net.essentuan.esl.Rating
 import net.essentuan.esl.fetch.Fetch
@@ -33,7 +34,7 @@ suspend fun Fetch.username(
     try {
         Minetools(query).execute(priority)
     } catch (ex: Exception) {
-        if (ex.causedBy<IOException> { it.message?.contains("GOAWAY received") == true })
+        if (ex.causedBy<MalformedJsonException>() || ex.causedBy<IOException> { it.message?.contains("GOAWAY received") == true })
             null
         else {
             Logging.error("Failed to execute minetools request for $query", ex)
