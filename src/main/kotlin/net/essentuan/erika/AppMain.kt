@@ -62,7 +62,9 @@ fun main(args: Array<String>) {
         if (reader.canRead() && reader.peek() == '-')
             reader.skip()
     }
-    
+
+    Reflections.register("net.essentuan.erika")
+
     Buster
 
     Commands.start()
