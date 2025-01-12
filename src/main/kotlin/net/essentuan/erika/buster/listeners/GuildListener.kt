@@ -75,31 +75,33 @@ object GuildListener : Singleton() {
     private fun Socket.on(packet: ServerboundTerritoryAttackedPacket) {
         val guild = guild ?: return
 
-        val timer = packet.timer
-        if (timer.territory !in TerritoryList) {
-            if (timer.trusted || guild.find(timer, false) != null)
-                return
+        if (packet.timer.remaining < 0.seconds)
+            return
 
-            val territory = TerritoryList.firstOrNull { it.name.startsWith(timer.territory) } ?: return
+        synchronized(guild) {
+            val timer = packet.timer
+            if (timer.territory !in TerritoryList) {
+                Logging.info("No territory found for ${timer.territory}")
 
-            guild.lock {
-                if (find(timer, territory = territory.name) == null)
-                    enqueue(
+                if (timer.trusted || guild.find(timer, false) != null)
+                    return
+
+                val territory = TerritoryList.firstOrNull { it.name.startsWith(timer.territory) } ?: return
+
+                if (guild.find(timer, territory = territory.name) == null)
+                    guild.enqueue(
                         timer.copy(
                             territory = territory.name,
                             defense = territory.defense,
                         )
                     )
-            }
-        } else {
-            guild.lock {
-                val previous = find(timer)
+            } else {
+                val previous = guild.find(timer)
 
                 if (previous == null)
-                    enqueue(timer)
+                    guild.enqueue(timer)
                 else if (!previous.trusted && timer.trusted)
-                    enqueue(previous.copy(defense = timer.defense, trusted = true))
-
+                    guild.enqueue(previous.copy(defense = timer.defense, trusted = true))
             }
         }
     }
@@ -130,9 +132,7 @@ class BusterGuild(
     @Synchronized
     fun find(timer: AttackTimer, strict: Boolean = true, territory: String = timer.territory): AttackTimer? {
         return if (strict) {
-            timers[territory].firstOrNull {
-                it.territory == territory && (it.remaining - timer.remaining).abs() < 105.seconds
-            }
+            timers[territory].firstOrNull { (it.remaining - timer.remaining).abs() < 105.seconds }
         } else
             timers.values().firstOrNull {
                 it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < 105.seconds
@@ -141,8 +141,10 @@ class BusterGuild(
 
     fun enqueue(timer: AttackTimer) {
         lock {
-            if (timer in timers[timer.territory])
-                timers.remove(timer.territory, timer)
+            val duplicate = find(timer)
+
+            if (duplicate != null)
+                timers.remove(timer.territory, duplicate)
 
             timers.put(timer.territory, timer)
 
