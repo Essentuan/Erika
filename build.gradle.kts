@@ -47,10 +47,11 @@ application {
 
 repositories {
     mavenCentral()
-    mavenLocal()
 
     maven("https://jitpack.io")
     maven("https://libraries.minecraft.net")
+
+    mavenLocal()
 }
 
 val generatedOutput: Configuration by configurations.creating {
