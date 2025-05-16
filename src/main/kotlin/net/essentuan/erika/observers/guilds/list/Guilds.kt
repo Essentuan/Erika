@@ -43,6 +43,15 @@ object Guilds : Singleton(), Guild.List {
             get() = "NONE"
     }
 
+    @Ignored
+    val UNKOWN: GuildType = object : GuildType {
+        override val uuid: UUID = UUID(0L, 0L)
+        override val name: String
+            get() = "Unknown"
+        override val tag: String
+            get() = "UKWN"
+    }
+
     override fun isEmpty(): Boolean = guilds.isEmpty()
 
     override operator fun get(uuid: UUID): GuildType? {
@@ -101,7 +110,7 @@ object Guilds : Singleton(), Guild.List {
         guilds.values.iterator()
 
     operator fun provideDelegate(thisRef: GuildType, prop: KProperty<*>): Lazy<GuildType> {
-        return lazy { this@Guilds[thisRef.uuid]!! }
+        return lazy { this@Guilds[thisRef.uuid] ?: Guilds.UNKOWN }
     }
 
     @Ignored

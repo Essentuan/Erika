@@ -52,7 +52,7 @@ data class GuildModel(
     override var wars: Int = 0,
     @property:ReadOnly
     override var results: Season.Results = Season.Results()
-) : Struct<GuildModel.Table>(), Guild, GuildType by Guilds[uuid]!! {
+) : Struct<GuildModel.Table>(), Guild, GuildType by Guilds[uuid] ?: Guilds.UNKOWN {
     override val xp: Long
         get() = (Guild.required(level) * (progress / 100.0)).toLong()
     override val required: Long

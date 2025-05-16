@@ -136,4 +136,4 @@ private class GuildInfo(
     override val uuid: UUID,
     @Alias(["metadata.modified"])
     val modified: Date
-) : Json.Model, GuildType by Guilds[uuid]!!
+) : Json.Model, GuildType by Guilds[uuid] ?: Guilds.UNKOWN

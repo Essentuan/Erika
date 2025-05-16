@@ -112,7 +112,7 @@ class BusterGuild(
     timers: Set<AttackTimer> = emptySet()
 ) : Json.Model, GuildType, MutableMap<UUID, Socket> by mutableMapOf() {
     @Ignored
-    private val type by lazy { Guilds[uuid]!! }
+    private val type by lazy { Guilds[uuid] ?: Guilds.UNKOWN }
 
     @Ignored
     val timers: SetMultimap<String, AttackTimer> =

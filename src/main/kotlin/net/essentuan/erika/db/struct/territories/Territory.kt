@@ -71,7 +71,7 @@ data class Territory(
             get() = template.connections
 
         @Ignored
-        override val owner: GuildType = Guilds[uuid]!!
+        override val owner: GuildType = Guilds[uuid] ?: Guilds.UNKOWN
 
         @Ignored
         override val resources: Map<ResourceType, IStorage> =
