@@ -3,12 +3,14 @@ package net.essentuan.erika.observers.guilds.list
 import com.busted_moments.buster.api.Guild
 import com.busted_moments.buster.api.GuildType
 import com.google.common.collect.Multimap
+import net.essentuan.erika.fetch.athena.athenaGuildList
 import net.essentuan.erika.framework.db.`object`.types.Singleton
 import net.essentuan.erika.fetch.wynncraft.list.GuildList
 import net.essentuan.erika.fetch.wynncraft.list.guildList
 import net.essentuan.erika.observers.guilds.events.GuildEvent
 import net.essentuan.esl.collections.multimap.Multimaps
 import net.essentuan.esl.collections.multimap.hashSetValues
+import net.essentuan.esl.color.Color
 import net.essentuan.esl.delegates.lateinit
 import net.essentuan.esl.fetch.fetch
 import net.essentuan.esl.json.Json
@@ -22,7 +24,10 @@ import net.essentuan.esl.string.extensions.bestMatch
 import net.essentuan.esl.string.extensions.isUUID
 import net.essentuan.esl.string.extensions.toUUID
 import java.util.Date
+import java.util.Random
 import java.util.UUID
+import java.util.zip.CRC32
+import kotlin.random.asKotlinRandom
 import kotlin.reflect.KProperty
 
 object Guilds : Singleton(), Guild.List {
@@ -50,6 +55,18 @@ object Guilds : Singleton(), Guild.List {
             get() = "Unknown"
         override val tag: String
             get() = "UKWN"
+    }
+
+    @Every(hours = 1.0)
+    private suspend fun updateGuildColors() {
+        val guilds = guilds.values
+            .asSequence()
+            .filterNot { it.isDeleted }
+            .associateBy { it.name }
+
+        for (e in fetch { athenaGuildList() })
+            if (e.color != null)
+                guilds[e.name]?._color = e.color.asHex()
     }
 
     override fun isEmpty(): Boolean = guilds.isEmpty()
@@ -197,15 +214,35 @@ object Guilds : Singleton(), Guild.List {
     }
 }
 
+private const val MIN_SATURATION = .5f
+private const val MIN_VALUE = .75f
+
+private fun colorForStringHash(value: String): Color {
+    val crc = CRC32().apply { update(value.toByteArray()) }
+
+    val random = Random(crc.value)
+
+    return Color(
+        hue = random.nextFloat(),
+        saturation = random.nextFloat(MIN_SATURATION, 1f),
+        value = random.nextFloat(MIN_VALUE, 1f)
+    )
+}
+
 private data class Entry(
     override val uuid: UUID,
     @property:ReadOnly
     override var name: String,
     @property:ReadOnly
-    override var tag: String
+    override var tag: String,
+    @property:ReadOnly
+    var _color: String = colorForStringHash(name).asHex()
 ) : Json.Model, GuildType {
     var isDeleted: Boolean = false
     var updatedAt: Date = Date(0)
+
+    @Ignored
+    val color = Color(_color)
 
     constructor(type: GuildType) : this(
         type.uuid,
@@ -213,6 +250,14 @@ private data class Entry(
         type.tag
     )
 }
+
+val GuildType.color: Color
+    get() {
+        if (this is Entry)
+            return this.color
+
+        return (Guilds[this] as Entry?)?.color ?: Color(0xffffff)
+    }
 
 val GuildType.isDeleted: Boolean
     get() {

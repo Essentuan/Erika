@@ -5,6 +5,7 @@ import com.essentuan.acf.core.annotations.Command
 import com.essentuan.acf.core.annotations.Subcommand
 import dev.kord.core.entity.channel.Channel
 import dev.kord.core.entity.channel.TextChannel
+import net.essentuan.erika.features.content.kord.tracks.ContentCompletionLane
 import net.essentuan.erika.framework.annotation.Description
 import net.essentuan.erika.kord.framework.commands.CommandInteraction
 import net.essentuan.erika.kord.framework.commands.annotations.Ephemeral
@@ -114,6 +115,36 @@ object TrackCommand {
             embed(McColor.GREEN) {
                 description {
                     +"Successfully starting tracking ICo raids!"
+                }
+            }
+        }
+    }
+
+    @Subcommand("content")
+    private suspend fun CommandInteraction.content(
+        @Named("Guild") guild: GuildType,
+        @Named("Channel") resolved: Channel = this.channel
+    ) {
+        val channel = resolved.fetchChannelOrNull()
+
+        if (channel == null || channel !is TextChannel) {
+            ephemeral {
+                embed(McColor.DARK_RED) {
+                    title {
+                        +"You must specify a channel!"
+                    }
+                }
+            }
+
+            return
+        }
+
+        TrackManager.getOrCreate(channel, source) += ContentCompletionLane(guild.uuid)
+
+        ephemeral {
+            embed(McColor.GREEN) {
+                description {
+                    +"Successfully starting tracking raids for ${guild.name} [${guild.tag}]!"
                 }
             }
         }

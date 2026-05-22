@@ -1,4 +1,3 @@
-import com.github.jengelman.gradle.plugins.shadow.internal.JavaJarExec
 import kotlin.String
 
 plugins {
@@ -84,7 +83,7 @@ dependencies {
     implementation("com.mojang:brigadier:$brigadier_version")
     implementation("com.essentuan:acf:$acf_version")
 
-    implementation("com.github.essentuan:buster:v$buster_version")
+    implementation("com.github.Essentuan:buster:v$buster_version")
     implementation("org.semver4j:semver4j:$semver_version")
 
     implementation("dev.kord:kord-core:$kord_version")
@@ -125,6 +124,6 @@ tasks {
             "-disabled Kord",
             "-mongo mongodb://127.0.0.1:27017/?authSource=theSimpleOnes",
             "-db Erika",
-        )
+            )
     }
 }

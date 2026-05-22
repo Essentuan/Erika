@@ -18,6 +18,7 @@ import io.ktor.websocket.extensionOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.isActive
+import net.essentuan.erika.arg
 import net.essentuan.erika.db.struct.guild.search.invoke
 import net.essentuan.erika.fetch.wynncraft.guild.BasicGuild
 import net.essentuan.erika.fetch.wynncraft.guild.guild
@@ -47,7 +48,9 @@ import net.essentuan.esl.rx.iterate
 import net.essentuan.esl.rx.map
 import net.essentuan.esl.scheduling.annotations.Every
 import net.essentuan.esl.scheduling.annotations.Lifetime
+import net.essentuan.esl.time.duration.Duration
 import net.essentuan.esl.time.duration.minutes
+import net.essentuan.esl.time.duration.seconds
 import net.essentuan.esl.time.extensions.timeUntil
 import java.math.BigInteger
 import java.nio.charset.Charset
@@ -83,12 +86,12 @@ object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by sco
                 .map { it to it.account.member.guild?.uuid }
                 .filterNot { (_, it) -> it == null }
                 .groupBy({ (_, it) -> it!! }) { (it, _) -> it }
-                .asSequence()
-                .filter { (guild, members) -> guild !in guilds && members.size >= Constants.guildCutoff }
-                .map { (it, _) -> it }
-                .map { Guilds[it] }
-                .filterNotNull()
-                .filterNot { it.isDeleted }
+                    .asSequence()
+                    .filter { (guild, members) -> guild !in guilds && members.size >= Constants.guildCutoff }
+                    .map { (it, _) -> it }
+                    .map { Guilds[it] }
+                    .filterNotNull()
+                    .filterNot { it.isDeleted }
         }.map { (_, result) -> result.orNull() }.filterNotNull() iterate {
             guilds[it.uuid] = fetch { guild(uuid = it.uuid, priority = Rating.LOWEST) } ?: return@iterate
         }
@@ -101,6 +104,8 @@ object BusterService : Service(), Route, Iterable<Socket>, CoroutineScope by sco
         .filterNotNull()
         .distinctBy { it.packet }
         .associateByTo(mutableMapOf()) { it.packet }
+
+    val marginOfError: Duration by arg("marginOfError", 10.seconds) { Duration(it)!! }
 
     fun register(listener: PacketListener) {
         listeners[listener.packet] = listener

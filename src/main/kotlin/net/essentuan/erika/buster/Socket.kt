@@ -61,8 +61,6 @@ class Socket(
         private set
 
     suspend fun start() {
-        session.closeReason
-
         try {
             events.register()
             send(ClientboundLoginPacket(id))

@@ -49,6 +49,9 @@ data class ProfileModel(
                     return
 
                 Memory.refresh(this, ProfileModel::name) {
+                    if (history.isEmpty())
+                        history.add(Entry(name, Date(-1)))
+
                     history.last().end = Date()
 
                     val old = name

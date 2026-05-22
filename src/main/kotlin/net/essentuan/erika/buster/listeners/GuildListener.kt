@@ -5,6 +5,7 @@ import com.busted_moments.buster.protocol.clientbound.ClientboundTerritoryAttack
 import com.busted_moments.buster.protocol.serverbound.ServerboundTerritoryAttackedPacket
 import com.busted_moments.buster.types.guilds.AttackTimer
 import com.google.common.collect.SetMultimap
+import net.essentuan.erika.buster.BusterService
 import net.essentuan.erika.buster.BusterService.socket
 import net.essentuan.erika.buster.Listener
 import net.essentuan.erika.buster.Socket
@@ -132,10 +133,10 @@ class BusterGuild(
     @Synchronized
     fun find(timer: AttackTimer, strict: Boolean = true, territory: String = timer.territory): AttackTimer? {
         return if (strict) {
-            timers[territory].firstOrNull { (it.remaining - timer.remaining).abs() < 105.seconds }
+            timers[territory].firstOrNull { (it.remaining - timer.remaining).abs() < BusterService.marginOfError }
         } else
             timers.values().firstOrNull {
-                it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < 105.seconds
+                it.territory.startsWith(territory) && (it.remaining - timer.remaining).abs() < BusterService.marginOfError
             }
     }
 

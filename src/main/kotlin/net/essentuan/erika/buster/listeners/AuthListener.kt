@@ -1,10 +1,7 @@
 package net.essentuan.erika.buster.listeners
 
 import com.busted_moments.buster.api.Account
-import com.busted_moments.buster.protocol.clientbound.ClientboundFFAListPacket
-import com.busted_moments.buster.protocol.clientbound.ClientboundGuildListPacket
-import com.busted_moments.buster.protocol.clientbound.ClientboundMapPacket
-import com.busted_moments.buster.protocol.clientbound.ClientboundWorldListPacket
+import com.busted_moments.buster.protocol.clientbound.*
 import com.busted_moments.buster.protocol.requests.AuthRequest
 import net.essentuan.erika.buster.BusterService
 import net.essentuan.erika.buster.FFAList
@@ -59,6 +56,8 @@ private suspend fun Socket.on(request: AuthRequest) {
                 }?.close()
 
                 request.fulfill(this.account.external())
+
+                send(ClientboundSetAttackTimerMarginOfErrorPacket(BusterService.marginOfError))
                 send(ClientboundMapPacket(TerritoryList.external()))
                 send(ClientboundFFAListPacket(FFAList.lock { toSet() }))
                 send(ClientboundGuildListPacket(Guilds.lock { external() }))

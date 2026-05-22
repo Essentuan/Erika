@@ -175,11 +175,11 @@ data class Track(
             owner.handleNoPermission(kord(), channel)
         }
 
-        protected suspend inline fun send(block: MessageBuilder.() -> Unit): Message? {
+        protected suspend inline fun send(block: suspend MessageBuilder.() -> Unit): Message? {
             val channel = channel() ?: return null
 
             return try {
-                channel.createMessage(block)
+                channel.createMessage { block() }
             } catch (ex: KtorRequestException) {
                 if (ex.status.code == 403)
                     handleNoPermission(channel)
@@ -188,6 +188,10 @@ data class Track(
 
                 null
             }
+        }
+
+        protected inline fun buildMessage(crossinline block: suspend MessageBuilder.() -> Unit) {
+            inline { send(block) }
         }
 
         internal fun Track.claim() {

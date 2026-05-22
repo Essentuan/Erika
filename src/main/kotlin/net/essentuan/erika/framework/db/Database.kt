@@ -198,9 +198,9 @@ object IdEncoder : AbstractEncoder<ObjectId, ObjectId>() {
 private fun Any.bson(): Any = when (this) {
     is LazilyParsedNumber -> toDouble()
     is AnyJson -> this.bson()
-    is MutableList<*> -> {
-        (this as MutableList<Any?>).listIterator() iterate { set(it?.bson()) }
-        this
+    is List<*> -> buildList {
+        for (e in this@bson)
+            add(e?.bson())
     }
 
     else -> this

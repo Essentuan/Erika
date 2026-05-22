@@ -87,78 +87,78 @@ object IcoEvent : Singleton(), Iterable<Pair<UUID, Raid.Store>> {
     }
 
 
-    @Listener
-    private suspend fun Socket.on(packet: ServerboundContentCompletionPacket) {
-        LOGGER.info(
-            "${packet.name} was completed by ${
-                buildString {
-                    packet.party iterate {
-                        if (isNotEmpty()) {
-                            append(", ")
-
-                            if (!hasNext())
-                                append("and ")
-                        }
-
-                        append(it.name)
-                    }
-                }
-            }!")
-
-        val guild = ICo()
-
-        if (uuid !in guild) {
-            LOGGER.info("${account.profile.name} is not in ICo!")
-            return
-        }
-
-        val type = try {
-            Raid.Type.valueOf(packet.id)
-        } catch (ex: IllegalArgumentException) {
-            null
-        }
-
-        if (type == null) {
-            LOGGER.info("Unknown raid ${packet.id}")
-            return
-        }
-
-        if (ContentModifier.GUILD_RAID !in packet.modifiers) {
-            LOGGER.info("This run was not a guild raid!")
-            return
-        }
-
-        val party = Profile {
-            for (member in packet.party) {
-                if (member.hasUUID)
-                    +member.uuid
-                else
-                    +member.name
-            }
-        }.map { it.second.orNull() }.filterNotNull().toList()
-
-        if (party.size != 4) {
-            LOGGER.info("${packet.party.joinToString { it.name }} is not a party of 4!")
-            return
-        }
-
-        for (member in party) {
-            if (member !in guild) {
-                LOGGER.info("${member.name} is not a member of ICo!")
-                return
-            }
-        }
-
-        LOGGER.info("Confirmed ${packet.name} was for ICo!")
-
-        val raid = Raid(packet, type, party)
-
-        for (member in party)
-            if (!get(member.uuid)!!.process(raid))
-                return
-
-        IcoEventLane.Completion(raid).post()
-    }
+//    @Listener
+//    private suspend fun Socket.on(packet: ServerboundContentCompletionPacket) {
+//        LOGGER.info(
+//            "${packet.name} was completed by ${
+//                buildString {
+//                    packet.party iterate {
+//                        if (isNotEmpty()) {
+//                            append(", ")
+//
+//                            if (!hasNext())
+//                                append("and ")
+//                        }
+//
+//                        append(it.name)
+//                    }
+//                }
+//            }!")
+//
+//        val guild = ICo()
+//
+//        if (uuid !in guild) {
+//            LOGGER.info("${account.profile.name} is not in ICo!")
+//            return
+//        }
+//
+//        val type = try {
+//            Raid.Type.valueOf(packet.id)
+//        } catch (ex: IllegalArgumentException) {
+//            null
+//        }
+//
+//        if (type == null) {
+//            LOGGER.info("Unknown raid ${packet.id}")
+//            return
+//        }
+//
+//        if (ContentModifier.GUILD_RAID !in packet.modifiers) {
+//            LOGGER.info("This run was not a guild raid!")
+//            return
+//        }
+//
+//        val party = Profile {
+//            for (member in packet.party) {
+//                if (member.hasUUID)
+//                    +member.uuid
+//                else
+//                    +member.name
+//            }
+//        }.map { it.second.orNull() }.filterNotNull().toList()
+//
+//        if (party.size != 4) {
+//            LOGGER.info("${packet.party.joinToString { it.name }} is not a party of 4!")
+//            return
+//        }
+//
+//        for (member in party) {
+//            if (member !in guild) {
+//                LOGGER.info("${member.name} is not a member of ICo!")
+//                return
+//            }
+//        }
+//
+//        LOGGER.info("Confirmed ${packet.name} was for ICo!")
+//
+//        val raid = Raid(packet, type, party)
+//
+//        for (member in party)
+//            if (!get(member.uuid)!!.process(raid))
+//                return
+//
+//        IcoEventLane.Completion(raid).post()
+//    }
 
     override fun iterator(): Iterator<Pair<UUID, Raid.Store>> =
         synchronized(completions) { completions.toList() }.iterator()
