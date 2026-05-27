@@ -201,63 +201,38 @@ data class Territory(
                     territories[connection]?.connections?.add(name)
         }
 
-        private fun apply(profiles: Map<String, TerritoryProfile>) {
-            for ((name, territory) in this) {
-                val profile = profiles[name] ?: continue
-
-                territory.base.putAll(production(profile.resources, territory.base))
-                territory.connections.clear()
-                territory.connections.addAll(profile.connections)
-            }
-
-            mirrorCons()
-        }
-
         private fun changed(territories: BasicTerritoryList): Boolean {
             if (territories.keys != this.territories.keys)
                 return true
 
             for ((name, territory) in territories) {
-                val location = territory.location
-                val before = this[name]?.location
+                val before = this[name] ?: return true
+
+                val newLocation = territory.location
+                val oldLocation = before.location
 
                 if (
-                    location.start.x != before?.start?.x ||
-                    location.start.z != before.start.z ||
-                    location.end.x != before.end.x ||
-                    location.end.z != before.end.z
-                )
-                    return true
+                    newLocation.start.x != oldLocation.start.x ||
+                    newLocation.start.z != oldLocation.start.z ||
+                    newLocation.end.x != oldLocation.end.x ||
+                    newLocation.end.z != oldLocation.end.z
+                ) return true;
+
+                if (territory.links != before.connections.toList()) return true
+
+                val oldProduction = before.base
+                val newProduction = territory.resources.associateBy { it.type.toBuster() }
+
+                for (resource in ResourceType.entries) {
+                    val beforeRes = oldProduction[resource] ?: 0
+                    val newRes = newProduction[resource]?.base ?: 0
+
+                    if (beforeRes != newRes) return true
+                }
             }
 
             return false
         }
-
-        private fun changed(profile: TerritoryProfile): Int {
-            val territory = territories[profile.name] ?: return TEMPLATE_UNCHANGED
-
-            return when {
-                territory.connections.isEmpty() || territory.base == noProduction() -> TEMPLATE_UPDATED
-                territory.connections != profile.connections -> {
-                    Logging.info("Connections for ${profile.name} have changed!")
-                    Logging.info("Before - ${territory.connections}")
-                    Logging.info("After - ${profile.connections}")
-
-                    TEMPLATE_CREATED
-                }
-                production(profile.resources, territory.base) != territory.base -> {
-                    Logging.info("Production for ${profile.name} has changed!")
-                    Logging.info("Before -${territory.base}")
-                    Logging.info("After - ${production(profile.resources, territory.base)}")
-
-                    TEMPLATE_CREATED
-                }
-                else -> TEMPLATE_UNCHANGED
-            }
-        }
-
-        private fun changed(territories: Map<String, TerritoryProfile>): Int =
-            territories.values.maxOf { changed(it) }
 
         companion object Table : StandardTable<Template>() {
             lateinit var latest: Template
@@ -269,54 +244,6 @@ data class Territory(
                             index {
                                 +Index.Type.DESCENDING
                             }
-                        }
-                    }
-                }
-            }
-
-            private fun noProduction() =
-                EnumMap<ResourceType, Int>(ResourceType::class.java).also {
-                    for (resource in ResourceType.entries)
-                        it[resource] = -1
-                }
-
-            private fun production(
-                production: Map<ResourceType, TerritoryProfile.Resources>,
-                base: Map<ResourceType, Int>
-            ): MutableMap<ResourceType, Int> {
-                return EnumMap<ResourceType, Int>(ResourceType::class.java).also {
-                    if (production.all { (_, storage) -> storage.production > 0 }) {
-                        it[ResourceType.EMERALDS] = RAINBOW_EMERALD
-                        it[ResourceType.ORE] = RAINBOW_RESOURCE
-                        it[ResourceType.WOOD] = RAINBOW_RESOURCE
-                        it[ResourceType.FISH] = RAINBOW_RESOURCE
-                        it[ResourceType.CROP] = RAINBOW_RESOURCE
-
-                        return@also
-                    }
-
-                    for (resource in ResourceType.entries) {
-                        if (production[resource]!!.production <= 0)
-                            it[resource] = 0
-                        else {
-                            val prod = when (resource) {
-                                ResourceType.EMERALDS ->
-                                    if (production[resource]!!.production > DOUBLE_EMERALD_CUTOFF)
-                                        DOUBLE_EMERALD
-                                    else
-                                        NORMAL_EMERALD
-
-                                else ->
-                                    if (production[resource]!!.production > DOUBLE_RESOURCE_CUTOFF)
-                                        DOUBLE_RESOURCE
-                                    else
-                                        NORMAL_RESOURCE
-                            }
-
-                            it[resource] = if (prod > (base[resource]!!))
-                                prod
-                            else
-                                base[resource]!!
                         }
                     }
                 }
@@ -341,11 +268,11 @@ data class Territory(
 
                 return Template(
                     territories.mapValues { (name, territory) ->
-                        val previous = if (::latest.isInitialized) latest[name] else null
-
                         Territory(
                             name,
-                            previous?.base ?: noProduction(),
+                            EnumMap<ResourceType, Int>(ResourceType::class.java).also {
+                                territory.resources.forEach { res -> it[res.type.toBuster()] = res.base }
+                            },
                             Location(
                                 Pos(
                                     territory.location.start.x,
@@ -356,7 +283,7 @@ data class Territory(
                                     territory.location.end.z
                                 )
                             ),
-                            previous?.connections ?: mutableSetOf()
+                            territory.links.toMutableSet()
                         )
                     }
                 ).also {
@@ -366,40 +293,6 @@ data class Territory(
                     NewTemplateEvent(it).post()
                 }
             }
-
-            operator fun invoke(profiles: Map<String, TerritoryProfile>): Template {
-                profiles.forEach { (territory, profile) ->
-                    for (conn in profile.connections)
-                        profiles[conn]?.connections?.add(territory)
-                }
-
-                return when (latest.changed(profiles)) {
-                    TEMPLATE_UNCHANGED -> latest
-                    TEMPLATE_UPDATED -> latest.also { it.apply(profiles); it.enqueue() }
-                    TEMPLATE_CREATED -> {
-                        Template(
-                            latest.mapValues { (name, territory) ->
-                                val profile = profiles[name] ?: return@mapValues territory
-
-                                Territory(
-                                    name,
-                                    production(profile.resources, territory.base),
-                                    territory.location,
-                                    profile.connections.toMutableSet()
-                                )
-                            }
-                        ).also {
-                            latest = it
-                            it.enqueue()
-
-                            NewTemplateEvent(it).post()
-                        }
-                    }
-
-                    else -> throw IllegalArgumentException()
-                }
-            }
-
         }
     }
 }

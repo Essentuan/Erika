@@ -23,11 +23,13 @@ function tooltip(ctx: TerritoryElement): HTMLElement {
             }
 
             default: {
-                for (let i = 0; i < Math.ceil((prod.base / 900) / 4); i++) {
-                    rows.push(
-                        <img src={`/assets/icons/map/${resource.toLowerCase()}.png`} alt={"emeralds"}
-                             class={"h-4 w-4"}/>
-                    )
+                if (prod.base > 0) {
+                    for (let i = 0; i < Math.ceil((prod.base / 900) / 4); i++) {
+                        rows.push(
+                            <img src={`/assets/icons/map/${resource.toLowerCase()}.png`} alt={"emeralds"}
+                                 class={"h-4 w-4"}/>
+                        )
+                    }
                 }
             }
         }

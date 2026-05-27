@@ -19,7 +19,7 @@ import net.essentuan.esl.other.repr
 import java.util.Date
 import java.util.Objects
 import java.util.UUID
-import kotlin.collections.forEach
+import kotlin.math.min
 
 data class BasicTerritoryList(
     @Alias(["response"])
@@ -30,8 +30,41 @@ data class BasicTerritory(
     @Alias(["guild"])
     val owner: BasicOwner,
     val acquired: Date?,
-    val location: BasicLocation
+    val location: BasicLocation,
+    val hq: Boolean,
+    val resources: List<BasicTerritoryProduction>,
+    val links: List<String>,
+    val defences: Territory.Rating
 ) : Json.Model
+
+enum class BasicTerritoryResource {
+    EMERALD,
+    ORE,
+    WOOD,
+    FISH,
+    CROP;
+
+    fun toBuster(): Territory.Resource {
+        return when (this) {
+            EMERALD -> Territory.Resource.EMERALDS
+            ORE -> Territory.Resource.ORE
+            WOOD -> Territory.Resource.WOOD
+            FISH -> Territory.Resource.FISH
+            CROP -> Territory.Resource.CROP
+        }
+    }
+}
+
+data class BasicTerritoryProduction(
+    val type: BasicTerritoryResource,
+    val generation: Int,
+    private val baseGeneration: Int,
+    val stored: Int,
+    val limit: Int
+) : Json.Model {
+    val base: Int
+        get() = min(generation, baseGeneration)
+}
 
 class BasicOwner(
     override val name: String = Guilds.NONE.name,

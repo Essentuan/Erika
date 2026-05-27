@@ -96,6 +96,25 @@ object TerritoryList : Singleton(), ITerritoryList {
             else -> before.acquired != now.acquired || (now.owner.uuid == Guilds.NONE.uuid && before.owner.uuid != now.owner.uuid)
         }
 
+    private fun hasChangedState(now: BasicTerritory, before: Territory.State): Boolean {
+        if (now.hq != before.hq) return true
+        if (now.defences != before.defense) return true
+
+        val newRes = now.resources.associateBy { it.type.toBuster() }
+        val oldRes = before.resources
+
+        for (resource in ResourceType.entries) {
+            val new = newRes[resource]
+            val old = oldRes[resource]
+
+            if (new?.generation != old?.production) return true
+            if (new?.stored != old?.stored) return true
+            if (new?.limit != old?.capacity) return true
+        }
+
+        return false
+    }
+
     @Every
     @Lifetime(minutes = 1.0)
     private suspend fun update() {
@@ -124,26 +143,37 @@ object TerritoryList : Singleton(), ITerritoryList {
 
                     for ((name, now) in new) {
                         val before = territories[name]
+                        val captured = before != null && hasBeenCaptured(now, before)
 
                         when {
-                            before == null || hasBeenCaptured(now, before) -> {
+                            before == null || captured || hasChangedState(now, before) -> {
                                 map[name] = Territory.State(
                                     name,
                                     now.owner.uuid,
                                     if (now.owner.uuid == Guilds.NONE.uuid) new.metadata.cachedAt!! else (now.acquired
                                         ?: new.metadata.cachedAt ?: Date()),
-                                    emptyMap(),
-                                    false,
-                                    TerritoryRating.VERY_LOW,
+                                    now.resources.associateBy { it.type.toBuster() }
+                                        .mapValues { (_, it) ->
+                                            Territory.State.Resource(
+                                                it.generation,
+                                                it.stored,
+                                                it.limit
+                                            )
+                                        },
+                                    now.hq,
+                                    now.defences,
                                     newVersion
                                 ).also {
                                     it.enqueue()
-                                    TerritoryCapturedEvent(
-                                        before,
-                                        before?.owner?.uuid?.let { uuid -> counts[uuid]?.decrementAndGet() } ?: 0,
-                                        it,
-                                        counts.computeIfAbsent(it.owner.uuid) { AtomicInteger(0) }.incrementAndGet()
-                                    ).post()
+
+                                    if (captured) {
+                                        TerritoryCapturedEvent(
+                                            before,
+                                            before?.owner?.uuid?.let { uuid -> counts[uuid]?.decrementAndGet() } ?: 0,
+                                            it,
+                                            counts.computeIfAbsent(it.owner.uuid) { AtomicInteger(0) }.incrementAndGet()
+                                        ).post()
+                                    }
                                 }
                             }
 
@@ -201,51 +231,51 @@ object TerritoryList : Singleton(), ITerritoryList {
         }
     }
 
-    fun submit(submission: Submission) {
-        if (submission.profiles.any { (name, territory) -> name != territory.name })
-            return
-
-        synchronized(LOGGER) {
-            val version = MapVersion(WorldList[submission.world], submission.profiles)
-
-            val new = mutableMapOf<String, Territory.State>()
-
-            for ((name, profile) in submission.profiles) {
-                val territory = territories[name]!!
-
-                if ((territory.owner.uuid != Guilds.NONE.uuid || profile.owner != "No owner") && territory.owner.name != profile.owner)
-                    new[name] = territory
-                else {
-                    new[name] = Territory.State(
-                        name,
-                        territory.owner.uuid,
-                        territory.acquired,
-                        EnumMap<ResourceType, Territory.State.Resource>(ResourceType::class.java).also {
-                            for (resource in ResourceType.entries) {
-                                val resources = profile.resources[resource]!!
-
-                                it[resource] = Territory.State.Resource(
-                                    resources.production,
-                                    resources.stored,
-                                    resources.capacity
-                                )
-                            }
-                        },
-                        profile.hq,
-                        profile.defense,
-                        version
-                    ).also { it.enqueue() }
-                }
-            }
-
-            territories = new
-            TerritoryList.version = version
-            timestamp = Date()
-        }
-
-        ResourceUpdateEvent(submission.world, submission.by, submission.profiles).post()
-        MapUpdateEvent().post()
-    }
+//    fun submit(submission: Submission) {
+//        if (submission.profiles.any { (name, territory) -> name != territory.name })
+//            return
+//
+//        synchronized(LOGGER) {
+//            val version = MapVersion(WorldList[submission.world], submission.profiles)
+//
+//            val new = mutableMapOf<String, Territory.State>()
+//
+//            for ((name, profile) in submission.profiles) {
+//                val territory = territories[name]!!
+//
+//                if ((territory.owner.uuid != Guilds.NONE.uuid || profile.owner != "No owner") && territory.owner.name != profile.owner)
+//                    new[name] = territory
+//                else {
+//                    new[name] = Territory.State(
+//                        name,
+//                        territory.owner.uuid,
+//                        territory.acquired,
+//                        EnumMap<ResourceType, Territory.State.Resource>(ResourceType::class.java).also {
+//                            for (resource in ResourceType.entries) {
+//                                val resources = profile.resources[resource]!!
+//
+//                                it[resource] = Territory.State.Resource(
+//                                    resources.production,
+//                                    resources.stored,
+//                                    resources.capacity
+//                                )
+//                            }
+//                        },
+//                        profile.hq,
+//                        profile.defense,
+//                        version
+//                    ).also { it.enqueue() }
+//                }
+//            }
+//
+//            territories = new
+//            TerritoryList.version = version
+//            timestamp = Date()
+//        }
+//
+//        ResourceUpdateEvent(submission.world, submission.by, submission.profiles).post()
+//        MapUpdateEvent().post()
+//    }
 
     fun ITerritory.external() = json {
         "name" to name

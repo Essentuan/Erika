@@ -52,13 +52,6 @@ class Submission(
 ) {
     val by: MutableSet<UUID> = mutableSetOf()
 
-    init {
-        schedule {
-            if (by.size < trustedCutoff)
-                worlds.lock { remove(world) }
-        } after 10.seconds
-    }
-
     fun submit(uuid: UUID, profiles: Map<String, TerritoryProfile>) {
         lock {
             if (by.size >= trustedCutoff || profiles != this.profiles)
@@ -67,7 +60,7 @@ class Submission(
             by += uuid
         }
 
-        if (by.size >= trustedCutoff)
-            TerritoryList.submit(this)
+//        if (by.size >= trustedCutoff)
+//            TerritoryList.submit(this)
     }
 }

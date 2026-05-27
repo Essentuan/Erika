@@ -63,37 +63,18 @@ data class MapVersion(
                 NewMapVersionEvent(it).post()
             }
         }
+    }
 
-        operator fun invoke(world: World?, profiles: Map<String, TerritoryProfile>): MapVersion {
-            if (world == null || world.age > latest.metadata.created.timeSince())
-                return latest
+    @Subscribe
+    private fun NewTileSetEvent.on() {
+        MapVersion(
+            Territory.Template.latest,
+            tiles
+        ).also {
+            latest = it
+            it.enqueue()
 
-            val template = Territory.Template(profiles)
-            if (latest.template.id == template.id)
-                return latest
-
-            return MapVersion(
-                template,
-                blocking { Tile.Set.latest() }
-            ).also {
-                latest = it
-                it.enqueue()
-
-                NewMapVersionEvent(it).post()
-            }
-        }
-
-        @Subscribe
-        private fun NewTileSetEvent.on() {
-            MapVersion(
-                Territory.Template.latest,
-                tiles
-            ).also {
-                latest = it
-                it.enqueue()
-
-                NewMapVersionEvent(it).post()
-            }
+            NewMapVersionEvent(it).post()
         }
     }
 }
