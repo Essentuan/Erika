@@ -225,6 +225,7 @@ data class Tile(
                     hashes,
                     parts = map.associateBy { it.hash }
                 ).map { (_, result) -> result.orNull() }.filterNotNull().toList()
+
                 Set(tiles).also {
                     it.enqueue()
                 }.run {
@@ -308,7 +309,7 @@ abstract class Grid<CELL : Any>(
             val endCellY = cellY(tile.y + tile.height)
 
             if (startCellX == endCellX && startCellY == endCellY) {
-                val i = -cellAt(startCellX, startCellY)
+                val i = cellAt(startCellX, startCellY)
 
                 (chunks[i] ?: mutableSetOf<Tile>().also { chunks[i] = it }).run { add(tile) }
             } else
