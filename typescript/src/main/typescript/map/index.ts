@@ -1,6 +1,6 @@
 import {TerritoryList} from "./api/territories/TerritoryList";
 import {Leaflet} from "./core/Leaflet";
-import {AthenaGuild} from "./api/athena/AthenaGuild";
+import {AthenaGuild, AthenaGuildList} from "./api/athena/AthenaGuild";
 import {Colors} from "./core/Colors";
 import {retrieve} from "../common/fetch";
 import {TerritoryLayer} from "./core/layers/territories/TerritoryLayer";
@@ -24,11 +24,11 @@ function colorOf(int: number) {
 async function main() {
     let [territories, guilds] = await Promise.all([
         retrieve<TerritoryList>("/api/territories"),
-        retrieve<Array<AthenaGuild>>("https://athena.wynntils.com/cache/get/guildList")
+        retrieve<AthenaGuildList>("/api/guildList")
     ]);
 
     if (guilds != null) {
-        for (let guild of guilds) {
+        for (let guild of guilds.guilds) {
             if (guild.color != undefined && guild.color.length > 0) {
                 Colors.register({
                     name: guild._id,

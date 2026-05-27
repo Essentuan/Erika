@@ -19,9 +19,9 @@ private class AthenaGuildListRequest : JsonRequest<List<AthenaGuild>>() {
     override fun invoke(body: Json): List<AthenaGuild>? =
         body.getList("array", Json::class)?.map {
                AthenaGuild(
-                   it.getString("name") ?: "<unknown>",
+                   it.getString("_id") ?: "<unknown>",
                    it.getString("color")?.let { str ->
-                        Color(str.substring(1).toInt(16))
+                       if (str.isEmpty()) null else Color(str.substring(1).toInt(16))
                    }
                )
         }
